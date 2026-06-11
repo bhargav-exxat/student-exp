@@ -10,8 +10,8 @@ function ThemeProvider({
   return (
     <ColorSchemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
       {...props}
     >
