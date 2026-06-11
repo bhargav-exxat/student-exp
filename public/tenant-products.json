@@ -1,0 +1,142 @@
+{
+  "v": 1,
+  "exportedAt": "2026-06-11T11:54:14.562Z",
+  "catalog": [
+    {
+      "id": "tenant-assessment",
+      "slug": "assessment",
+      "label": "Exxat assessment",
+      "brandPrefix": "Exxat",
+      "brandSuffix": "assessment",
+      "brandColor": "oklch(75.45% 0.1516 38.65)",
+      "scope": "school-program",
+      "nav": [
+        {
+          "key": "dashboard",
+          "title": "Dashboard",
+          "url": "/assessment/dashboard",
+          "iconClass": "fa-light fa-gauge-high",
+          "iconActiveClass": "fa-solid fa-gauge-high"
+        },
+        {
+          "key": "assessments",
+          "title": "assessments",
+          "url": "/assessment/assessments",
+          "iconClass": "fa-light fa-clipboard-check",
+          "iconActiveClass": "fa-solid fa-clipboard-check"
+        },
+        {
+          "key": "reports",
+          "title": "Reports",
+          "url": "/assessment/reports",
+          "iconClass": "fa-light fa-chart-line",
+          "iconActiveClass": "fa-solid fa-chart-line"
+        },
+        {
+          "key": "schedule",
+          "title": "Schedule",
+          "url": "/assessment/schedule",
+          "iconClass": "fa-light fa-calendar",
+          "iconActiveClass": "fa-solid fa-calendar"
+        },
+        {
+          "key": "documents",
+          "title": "Documents",
+          "url": "/assessment/documents",
+          "iconClass": "fa-light fa-folder-open",
+          "iconActiveClass": "fa-solid fa-folder-open"
+        },
+        {
+          "key": "library",
+          "title": "Library",
+          "url": "/assessment/library",
+          "iconClass": "fa-light fa-books",
+          "iconActiveClass": "fa-solid fa-books",
+          "secondaryPanel": "library",
+          "primaryHubChildKey": "library-hub",
+          "children": [
+            {
+              "key": "library-hub",
+              "title": "Library home",
+              "url": "/assessment/library",
+              "iconClass": "fa-light fa-sparkles",
+              "iconActiveClass": "fa-solid fa-sparkles",
+              "primaryHubChildKey": "library-hub"
+            },
+            {
+              "key": "library-search",
+              "title": "Search",
+              "url": "/assessment/library/find",
+              "iconClass": "fa-light fa-magnifying-glass",
+              "iconActiveClass": "fa-solid fa-magnifying-glass"
+            },
+            {
+              "key": "library-all",
+              "title": "All items",
+              "url": "/assessment/library/all",
+              "iconClass": "fa-light fa-table-list",
+              "iconActiveClass": "fa-solid fa-table-list"
+            }
+          ]
+        }
+      ],
+      "defaultPath": "/assessment/dashboard",
+      "source": "user",
+      "createdAt": "2026-06-10T09:50:12.594Z",
+      "updatedAt": "2026-06-11T11:17:47.810Z",
+      "deletedAt": null,
+      "extensions": {}
+    }
+  ],
+  "productData": {
+    "tenant-assessment": {
+      "entities": {},
+      "hubs": {},
+      "preferences": {
+        "builder": {
+          "scope": "school-program",
+          "scopeFields": {
+            "schoolName": "Johns Hopkins University",
+            "programName": "Physician Assistant",
+            "brandName": "Mass General Brigham",
+            "siteName": "MGH Boston",
+            "locationName": "Cardiology Wing"
+          },
+          "persona": "student",
+          "navRows": [
+            {
+              "key": "assessments",
+              "title": "assessments",
+              "segment": "assessments"
+            },
+            {
+              "key": "reports",
+              "title": "Reports",
+              "segment": "reports"
+            },
+            {
+              "key": "schedule",
+              "title": "Schedule",
+              "segment": "schedule"
+            },
+            {
+              "key": "documents",
+              "title": "Documents",
+              "segment": "documents"
+            },
+            {
+              "key": "library",
+              "title": "Library",
+              "segment": "library"
+            }
+          ],
+          "onboardedAt": "2026-06-05T11:06:37.782Z"
+        }
+      },
+      "storageSnapshot": {
+        "assessment:library:lifecycle:v1:questions": "{\"v\":1,\"sortRules\":[{\"id\":\"sort-default\",\"fieldKey\":\"updatedAt\",\"direction\":\"desc\"}],\"search\":\"\",\"activeFilters\":[],\"filterConnectors\":{},\"groupBy\":null,\"colOrder\":[\"select\",\"stem\",\"topic\",\"type\",\"difficulty\",\"updatedAt\",\"author\",\"actions\"],\"hiddenCols\":[],\"colWidths\":{\"select\":40,\"stem\":300,\"topic\":160,\"type\":140,\"difficulty\":110,\"updatedAt\":120,\"author\":260,\"actions\":48},\"colPins\":{\"select\":\"left\",\"stem\":\"left\",\"actions\":\"right\"},\"colWrap\":{},\"colMenuSearch\":{},\"rowHeight\":\"default\",\"showGridlines\":true,\"filterBarVisible\":true,\"searchOpen\":false,\"extras\":{\"conditionalRules\":[],\"pagination\":false,\"paginationPage\":1,\"paginationPageSize\":10}}",
+        "assessment:library:toolbar-search-recents": "{\"v\":1,\"d\":[]}"
+      }
+    }
+  }
+}

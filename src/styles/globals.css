@@ -1,0 +1,152 @@
+/* ==========================================================================
+   EXXAT DESIGN SYSTEM — create-exxat-app starter globals.css
+   ------------------------------------------------------------------
+   Canonical theme tokens, custom variants, and base-layer styles live
+   in `@exxatdesignux/ui/globals.css`. Synced from apps/web via
+   `pnpm sync-ui-template` — sidebar utilities below; @source paths are
+   template-specific.
+
+   Standard: WCAG 2.1 Level AA
+   ========================================================================== */
+
+@import "@exxatdesignux/ui/globals.css";
+
+
+/* This app's own files (templates auto-scan these regardless of CSS file location). */
+@source "../../components";
+@source "../../contexts";
+@source "../../hooks";
+@source "../../lib";
+@source "../../stores";
+@source "../";
+
+/* Sidebar nav labels — beat stale package dist that still applies truncate. */
+@layer utilities {
+  /* Use data-sidebar (stable) — TooltipTrigger asChild on collapsible parents
+     overwrites data-slot to tooltip-trigger, skipping slot-based rules. */
+  [data-sidebar="menu-button"]:not([data-size="lg"]) {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 1.75rem !important;
+    align-items: center !important;
+    padding-block: var(--exxat-spacing-1) !important;
+    padding-inline: var(--exxat-spacing-2) !important;
+  }
+
+  [data-sidebar="menu-button"] > span[aria-hidden="true"] i,
+  [data-sidebar="menu-button"] > i[aria-hidden="true"] {
+    display: block;
+    line-height: 1;
+  }
+
+  [data-sidebar-nav-label] {
+    overflow: visible !important;
+    white-space: normal !important;
+    text-overflow: clip !important;
+    word-break: break-word;
+  }
+
+  /* Child rows — flex centering; no translate nudge into the guide line. */
+  [data-slot="sidebar-menu-sub-button"] {
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    translate: none !important;
+    padding-block: var(--exxat-spacing-1) !important;
+    padding-inline: var(--exxat-spacing-2) !important;
+  }
+
+  /* Primary sidebar collapsible — indent sub-menu rows; no vertical guide (overlaps icons). */
+  [data-sidebar="menu-item"].group\/collapsible {
+    position: relative;
+  }
+
+  [data-sidebar="menu-item"].group\/collapsible::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  [data-slot="sidebar-menu-sub"] {
+    margin-inline: 0 !important;
+    margin-inline-start: var(--exxat-spacing-3) !important;
+    padding-inline-end: 0 !important;
+    padding-inline-start: 0 !important;
+    translate: none !important;
+    width: calc(100% - var(--exxat-spacing-3)) !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    border-inline-start: none !important;
+  }
+
+  /* Nested collapsible inside a sub-menu (e.g. Compliance under Program). */
+
+  [data-slot="outline-tree-menu-item"]:has(
+      > .group\/collapsible[data-state="open"] [data-slot="outline-tree-sub"]
+    ),
+  li:has(> .group\/collapsible[data-state="open"] [data-slot="outline-tree-sub"]) {
+    position: relative !important;
+  }
+
+  [data-slot="outline-tree-menu-item"]:has(
+      > .group\/collapsible[data-state="open"] [data-slot="outline-tree-sub"]
+    )::before,
+  li:has(> .group\/collapsible[data-state="open"] [data-slot="outline-tree-sub"])::before {
+    content: "";
+    position: absolute;
+    left: calc(
+      var(--outline-tree-row-padding-x) + var(--outline-tree-depth, 0) *
+        var(--outline-tree-depth-step) + var(--outline-tree-chevron-half)
+    );
+    top: var(--outline-tree-guide-overhang);
+    bottom: calc(-1 * var(--outline-tree-guide-overhang));
+    border-left: 1px solid var(--sidebar-border);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  [data-slot="secondary-panel"] [data-slot="outline-tree-menu-item"]:has(
+      > .group\/collapsible[data-state="open"] [data-slot="outline-tree-sub"]
+    )::before,
+  [data-slot="secondary-panel"]
+    li:has(> .group\/collapsible[data-state="open"] [data-slot="outline-tree-sub"])::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  [data-slot="outline-tree-sub"][data-guide-layout="chevronRail"] {
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    border-inline-start: none !important;
+  }
+
+  [data-slot="sidebar-menu-sub-item"] {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  [data-slot="sidebar-menu-sub-item"].group\/collapsible-sub {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  [data-sidebar="nav-sub-badge"] {
+    position: static !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+    align-self: center !important;
+    margin-inline-end: var(--exxat-spacing-2) !important;
+    pointer-events: none !important;
+  }
+
+}
+
+/* This app's own files. */

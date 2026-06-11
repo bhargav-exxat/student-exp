@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" class="theme-prism">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exxat Design System</title>
+    <meta
+      name="description"
+      content="Shared UI component library for Exxat One and Exxat Prism — built to WCAG 2.1 Level AA."
+    />
+    <!--
+      Default browser-chrome color paired with the default <html class>
+      (theme-prism / rose). Override at the consumer app's index.html if
+      the cold-start theme should be theme-one (#f6f3ff) instead.
+      ThemeColorSync takes over once React hydrates.
+    -->
+    <meta name="theme-color" content="#fdedf2" />
+
+    <!--
+      Adobe Fonts — Ivy Presto · Kit ID: wuk5wqn.
+      crossorigin="" pairs the preconnect/preload/fetch as one CORS-correct
+      connection so the stylesheet cannot read first-party cookies.
+    -->
+    <link rel="preconnect" href="https://use.typekit.net" crossorigin="" />
+    <link rel="preconnect" href="https://p.typekit.net" crossorigin="" />
+    <link
+      rel="preload"
+      href="https://use.typekit.net/wuk5wqn.css"
+      as="style"
+      crossorigin=""
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.typekit.net/wuk5wqn.css"
+      crossorigin=""
+    />
+
+    <!--
+      Font Awesome Pro Kit. CSP/origins documented in the Vite config /
+      consumer hosting setup; the kit URL is content-versioned so SRI is
+      not applied — origin pinning + crossorigin="anonymous" is the
+      trust model.
+    -->
+    <script
+      src="https://kit.fontawesome.com/d9bd5774e0.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body class="bg-sidebar text-foreground font-sans">
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
