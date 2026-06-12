@@ -48,6 +48,42 @@ export default function ExamTakePage() {
   const [fontSizePercent, setFontSizePercent] = React.useState<number>(100);
   const [colorFilter, setColorFilter] = React.useState<'none' | 'protanopia' | 'deuteranopia' | 'tritanopia'>('none');
 
+  // Tab sync state to detect duplicate tabs running the same exam
+  const [isDuplicateTab, setIsDuplicateTab] = React.useState(false);
+  const isDuplicateTabRef = React.useRef(isDuplicateTab);
+  isDuplicateTabRef.current = isDuplicateTab;
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const channelName = `exam-tab-sync-${examId || 'default'}`;
+    let bc: BroadcastChannel | null = null;
+
+    try {
+      bc = new BroadcastChannel(channelName);
+    } catch (e) {
+      console.error("BroadcastChannel not supported", e);
+      return;
+    }
+
+    bc.onmessage = (event) => {
+      if (event.data && event.data.type === 'PING') {
+        if (!isDuplicateTabRef.current) {
+          bc?.postMessage({ type: 'PONG' });
+        }
+      } else if (event.data && event.data.type === 'PONG') {
+        setIsDuplicateTab(true);
+      }
+    };
+
+    // Broadcast our presence to detect other instances
+    bc.postMessage({ type: 'PING' });
+
+    return () => {
+      bc?.close();
+    };
+  }, [examId]);
+
   const setTheme = (newTheme: 'light' | 'dark' | 'contrast') => {
     setThemeState(newTheme);
     if (newTheme === 'dark') {
@@ -1627,6 +1663,33 @@ export default function ExamTakePage() {
               <button onClick={() => handleKeyClick(' ')} className="w-48 h-8 rounded-md bg-muted border border-border hover:bg-muted/80 text-[10px] uppercase flex items-center justify-center cursor-pointer">Space</button>
               <button onClick={() => handleKeyClick('Enter')} className="px-3 h-8 rounded-md bg-[var(--exam-accent-light)] border border-[var(--exam-accent-border)] text-[var(--exam-accent)] hover:opacity-95 text-[10px] uppercase flex items-center justify-center cursor-pointer">Enter</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isDuplicateTab && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-md">
+          <div className="max-w-md w-full p-8 rounded-2xl border bg-card shadow-2xl text-center flex flex-col gap-6 animate-card-enter border-destructive/30">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto animate-pulse">
+              <i className="fa-solid fa-clone text-[28px]" />
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                Duplicate Tab Detected
+              </h1>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your exam is already running in another tab. If you have closed the tab, refresh this screen and try starting again.
+              </p>
+            </div>
+
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 text-sm"
+            >
+              <i className="fa-light fa-arrows-rotate" />
+              Refresh Screen
+            </button>
           </div>
         </div>
       )}
