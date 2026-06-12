@@ -51,6 +51,151 @@ export default function ExamTakePage() {
   // Tab sync state to detect duplicate tabs running the same exam
   const [isDuplicateTab, setIsDuplicateTab] = React.useState(false);
   const isDuplicateTabRef = React.useRef(isDuplicateTab);
+
+  // ==========================================
+  // ADMIN SIMULATION STATES & DATA
+  // ==========================================
+  const [adminShowResults, setAdminShowResults] = React.useState(true);
+  const [adminResultType, setAdminResultType] = React.useState<'score' | 'pass-fail' | 'hidden'>('score');
+  const [adminGradingStatus, setAdminGradingStatus] = React.useState<'complete' | 'pending'>('pending');
+  const [adminPreCurving, setAdminPreCurving] = React.useState(false);
+  const [adminCourseWeight, setAdminCourseWeight] = React.useState(25);
+  const [adminKeyVisibility, setAdminKeyVisibility] = React.useState(true);
+  const [adminKeyType, setAdminKeyType] = React.useState<'answers-only' | 'match' | 'match-rationale' | 'rationale-only'>('match-rationale');
+  const [adminSectionVisibility, setAdminSectionVisibility] = React.useState<Record<number, boolean>>({
+    1: true,
+    2: true,
+    3: true,
+    4: true,
+    5: true,
+    6: true
+  });
+  const [adminShowSectionPerformance, setAdminShowSectionPerformance] = React.useState(true);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(true);
+  const [keyFilter, setKeyFilter] = React.useState<'all' | 'correct' | 'incorrect' | 'unanswered'>('all');
+
+  // Master Answer Key
+  const correctAnswers: Record<number, any> = {
+    1: 'A',
+    2: 'B',
+    3: 'A',
+    4: 'A',
+    5: 'C',
+    6: 'B',
+    7: 'B',
+    8: 'C',
+    9: 'A',
+    10: 'A',
+    11: 'B',
+    12: 'A',
+    13: 'C',
+    14: 'B',
+    15: 'A',
+    16: 'Non-urgent (Level 4/5)',
+    17: ['A', 'C', 'E'],
+    18: ['C'],
+    19: ['A', 'C', 'D'],
+    20: ['B', 'D'],
+    21: { blank1: 'Angiotensin I', blank2: 'Angiotensin II' },
+    22: { blank1: 'Tissue Factor', blank2: 'X' },
+    23: 'Dehydration impacts renal function...', // Subjective
+    24: 'Asthma exacerbation pathophysiology...', // Subjective
+    25: 'Mitral Valve',
+    26: { 'CN I (Olfactory)': 'Smell', 'CN II (Optic)': 'Vision', 'CN VII (Facial)': 'Facial expression' },
+    27: { Penicillins: 'Cell wall synthesis inhibitor', Macrolides: 'Protein synthesis inhibitor', Fluoroquinolones: 'DNA gyrase inhibitor' }
+  };
+
+  // Master Rationales
+  const rationales: Record<number, string> = {
+    1: "Myocardial infarction commonly presents with acute retrosternal chest pain/pressure that can radiate to the left arm, neck, or jaw, often accompanied by diaphoresis and shortness of breath.",
+    2: "The patient is presenting with crushing substernal chest pain radiating to the left shoulder, diaphoresis, and nausea that was not relieved by nitroglycerin, which is classic for a myocardial infarction.",
+    3: "High MCV (115 fL) indicates macrocytosis, and low B12 (110 pg/mL) explains the macrocytic anemia.",
+    4: "Mid-systolic crescendo-decrescendo murmur is characteristic of Aortic Stenosis.",
+    5: "Cerebellar dysfunction typically presents with an uncoordinated, wide-based ataxic gait.",
+    6: "A papule is a solid, raised lesion less than 1 cm in diameter.",
+    7: "Guidelines list Nitrofurantoin or TMP-SMX as first-line options for uncomplicated cystitis.",
+    8: "Signs point to acute appendicitis, which is a surgical emergency requiring immediate evaluation.",
+    9: "Testing pupillary light reflex and extraocular movements evaluates CN III (Oculomotor nerve).",
+    10: "Low pH (<7.35) indicates acidosis. High PaCO2 (>45) indicates a respiratory cause. HCO3- is normal, indicating acute respiratory acidosis.",
+    11: "Metformin's primary mechanism is decreasing hepatic glucose production (gluconeogenesis) and increasing peripheral insulin sensitivity.",
+    12: "The arrow points to the C-shaped nerve fiber bundle connecting the hemispheres, which is the corpus callosum.",
+    13: "Sepsis development is indicated by a spike in heart rate (>100 bpm) and temperature accompanied by a sharp decline in blood pressure starting at 12 hours.",
+    14: "An irregularly irregular rhythm with absent P-waves is characteristic of atrial fibrillation.",
+    15: "The absence of lung markings in the periphery of the hemithorax on the chest X-ray indicates a pneumothorax.",
+    16: "Stable vitals and a sprained ankle represent a non-urgent triage case (Level 4/5).",
+    17: "Metoprolol, Atenolol, and Propranolol are beta-adrenergic antagonists (beta-blockers). Lisinopril is an ACE inhibitor and Amlodipine is a calcium channel blocker.",
+    18: "Hyperthyroidism increases metabolic rates and stimulates the cardiovascular system, causing tachycardia (fast heart rate) and palpitations. Bradycardia is a classic symptom of hypothyroidism.",
+    19: "ACE inhibitors inhibit angiotensin-converting enzyme, leading to accumulation of bradykinin (causing dry cough) and reduced aldosterone secretion (leading to potassium retention and hyperkalemia), and can cause life-threatening angioedema.",
+    20: "Bell's palsy causes peripheral unilateral facial weakness affecting both the upper and lower face (including forehead). Ischemic stroke and brain tumors cause central weakness sparing the forehead, making central causes least likely here.",
+    21: "Renin converts angiotensinogen into Angiotensin I, which is subsequently converted into Angiotensin II by Angiotensin-Converting Enzyme (ACE) primarily in the lungs.",
+    22: "The extrinsic coagulation pathway is initiated by Tissue Factor (Factor III). Both intrinsic and extrinsic pathways converge at the common pathway to activate Factor X.",
+    23: "Dehydration reduces intravascular volume, decreasing renal perfusion. In response, kidneys activate the renin-angiotensin-aldosterone system (RAAS) to conserve water/sodium, and release Antidiuretic Hormone (ADH) to increase water reabsorption in the collecting ducts.",
+    24: "Asthma exacerbation is characterized by chronic airway inflammation leading to hyperresponsiveness. Exposure to triggers causes bronchoconstriction, airway edema, and mucus plugging, creating airway resistance and airflow limitation.",
+    25: "The mitral (bicuspid) valve is located between the left atrium and left ventricle, allowing blood to flow into the left ventricle.",
+    26: "CN I (Olfactory) controls smell. CN II (Optic) controls vision. CN VII (Facial) controls facial expression.",
+    27: "Penicillins inhibit cell wall synthesis. Macrolides bind to the 50S ribosomal subunit to inhibit protein synthesis. Fluoroquinolones target DNA gyrase to prevent bacterial replication."
+  };
+
+  // Helper to check if a student's answer is correct
+  const isQuestionCorrect = (q: Question) => {
+    const studentAns = answers[q.id];
+    const correctAns = correctAnswers[q.id];
+    
+    if (studentAns === undefined || studentAns === null) return false;
+    
+    if (q.type === 'mcq-single' || q.type === 'dropdown' || q.type === 'hotspot') {
+      return studentAns === correctAns;
+    }
+    
+    if (q.type === 'mcq-multiple') {
+      if (!Array.isArray(studentAns)) return false;
+      if (studentAns.length !== correctAns.length) return false;
+      return studentAns.every(v => correctAns.includes(v));
+    }
+    
+    if (q.type === 'fill-blank' || q.type === 'match') {
+      const keys = Object.keys(correctAns);
+      if (keys.length === 0) return false;
+      return keys.every(k => studentAns[k] === correctAns[k]);
+    }
+    
+    return false; // Subjective questions (essay) are graded by faculty
+  };
+
+  // Fill mock answers on submit if the user hasn't filled them
+  const fillMockAnswers = () => {
+    const newAnswers = { ...answers };
+    questions.forEach(q => {
+      if (newAnswers[q.id] === undefined || newAnswers[q.id] === "") {
+        if (q.id === 3) {
+          newAnswers[q.id] = 'C'; // mock wrong answer (correct is A)
+        } else if (q.id === 14) {
+          newAnswers[q.id] = 'A'; // mock wrong answer (correct is B)
+        } else if (q.id === 19) {
+          newAnswers[q.id] = ['A', 'C']; // mock partially wrong (correct is A, C, D)
+        } else if (q.type === 'mcq-single') {
+          newAnswers[q.id] = correctAnswers[q.id];
+        } else if (q.type === 'mcq-multiple') {
+          newAnswers[q.id] = correctAnswers[q.id];
+        } else if (q.type === 'dropdown') {
+          newAnswers[q.id] = correctAnswers[q.id];
+        } else if (q.type === 'fill-blank') {
+          newAnswers[q.id] = correctAnswers[q.id];
+        } else if (q.type === 'essay') {
+          if (q.id === 23) {
+            newAnswers[q.id] = "Dehydration causes a drop in blood volume and pressure. The kidneys sense this through baroreceptors and macular densa cells, triggering renin release. Renin acts on angiotensinogen to produce Angiotensin I. ACE in pulmonary vasculature converts this to Angiotensin II, which triggers systemic vasoconstriction and signals the adrenal gland to secrete aldosterone. Aldosterone increases Na+ and water retention, conserving fluid.";
+          } else {
+            newAnswers[q.id] = "Asthma exacerbation is characterized by bronchospasm, mucous hypersecretion, and mucosal edema. Trigger exposure causes IgE crosslinking on mast cells, degranulation, and mediator release (leukotrienes, histamine). This narrows airway lumens, causing severe airflow limitation, wheezing, and dyspnea.";
+          }
+        } else if (q.type === 'hotspot') {
+          newAnswers[q.id] = correctAnswers[q.id];
+        } else if (q.type === 'match') {
+          newAnswers[q.id] = correctAnswers[q.id];
+        }
+      }
+    });
+    setAnswers(newAnswers);
+  };
   isDuplicateTabRef.current = isDuplicateTab;
 
   React.useEffect(() => {
@@ -140,6 +285,7 @@ export default function ExamTakePage() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          fillMockAnswers();
           setPhase('submitted');
           return 0;
         }
@@ -543,167 +689,221 @@ export default function ExamTakePage() {
 
       {/* PHASE 1.5: GENERAL ASSESSMENT INSTRUCTIONS */}
       {phase === 'instructions' && (
-        <div className="flex-1 flex flex-col justify-start items-center p-6 md:p-8 overflow-y-auto bg-background animate-card-enter">
-          {/* Split layout container */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mx-auto text-left items-start mt-4">
-            
-            {/* Left Column: Instructions (col-span-2) */}
-            <div className="md:col-span-2 flex flex-col gap-6">
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
-                  Instructions
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Read the following carefully before you begin.
-                </p>
-              </div>
-
-              {/* Faculty Instructions */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-foreground text-sm">Faculty Instructions</h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--exam-accent-light)] text-[var(--exam-accent)] border border-[var(--exam-accent-border)] uppercase tracking-wider">From your instructor</span>
-                </div>
-                <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto">
-                  <p>Covers Chapters 12–18. Closed book. No reference materials. A proctor password will be provided at exam time.</p>
-                  <div className="mt-4 border-t pt-3 border-border/60">
-                    <span className="text-xs font-bold text-muted-foreground block mb-2">Reference Materials Available:</span>
-                    <ul className="list-disc pl-4 text-xs flex flex-col gap-2 text-muted-foreground font-semibold">
-                      <li className="flex items-center gap-1.5"><i className="fa-light fa-function" style={{ fontSize: "14px" }} /> Pharmacokinetic Formulas</li>
-                      <li className="flex items-center gap-1.5"><i className="fa-light fa-calculator" style={{ fontSize: "14px" }} /> Dosage Calculations</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-foreground text-sm">Instructions</h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">Academic Integrity</span>
-                </div>
-                <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto font-medium">
-                  <p>By taking this assessment, you agree to complete all questions independently without the assistance of any unauthorized resources, other students, or external parties. You understand that any form of academic dishonesty may result in a failing grade, academic probation, or dismissal from the program in accordance with your institution's code of conduct.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Exam Details & CTA Card (col-span-1) */}
-            <div className="md:col-span-1 flex flex-col gap-4 p-5 bg-card border border-border rounded-2xl shadow-md sticky top-6">
-              
-              {/* Header Stats */}
-              <div className="grid grid-cols-3 gap-2 text-center border-b pb-4 border-border">
-                <div className="flex flex-col items-center">
-                  <span className="text-base font-bold text-foreground">27</span>
-                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Questions</span>
-                </div>
-                <div className="flex flex-col items-center border-x border-border">
-                  <span className="text-base font-bold text-foreground">2h 00m</span>
-                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Time</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-base font-bold text-foreground">75%</span>
-                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Pass</span>
-                </div>
-              </div>
-
-              {/* 1. Proctor Password Input */}
-              <div className="flex flex-col gap-1.5 text-left px-0.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <i className="fa-solid fa-lock text-[var(--exam-accent)]" />
-                  Proctor Password Required
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setPasswordError('');
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && attested && password) {
-                        handleStartExam();
-                      }
-                    }}
-                    placeholder="Enter proctor password"
-                    className="w-full pl-8 pr-3 py-2.5 rounded-xl border bg-background border-border text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[var(--exam-accent)]/20 focus:border-[var(--exam-accent)] font-semibold transition-all"
+        <>
+          {/* HEADER */}
+          <header className="border-b flex flex-col shrink-0 z-40 sticky top-0 bg-card border-border shadow-sm">
+            <div className="h-14 flex items-center justify-between px-6">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <svg viewBox="0 0 514 164" className="hidden sm:block shrink-0 h-6 text-foreground" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Exxat Logo">
+                  <path
+                    d="M73.49 155.24C114.08 155.24 146.99 122.33 146.99 81.74C146.99 41.15 114.08 8.25 73.49 8.25C32.9 8.25 0 41.15 0 81.74C0 122.33 32.9 155.24 73.49 155.24Z"
+                    fill="url(#exxat-gradient-header)"
                   />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-                    <i className="fa-light fa-key text-[13px]" />
+                  <path
+                    d="M0.59 90.99C4.6 122.92 29.09 148.47 60.5 154.09L102.46 116.36V102.3H86.83L102.46 88.25V74.2H86.83L102.46 60.14V46.09H50.56L0.59 90.99Z"
+                    fill="#BE1E6D"
+                  />
+                  <path d="M102.47 116.36H50.56L58.68 102.3H102.47V116.36Z" fill="white" />
+                  <path d="M102.47 60.13H58.68L50.56 46.08H102.47V60.13Z" fill="white" />
+                  <path d="M102.47 88.24H66.79L70.85 81.21L66.79 74.18H102.47V88.24Z" fill="white" />
+                  <path d="M39.22 74.18H66.8L58.68 60.13H39.22V74.18Z" fill="white" />
+                  <path d="M39.22 102.3H58.68L66.8 88.24H39.22V102.3Z" fill="white" />
+
+                  <g className="fill-current">
+                    {/* E */}
+                    <path d="M196 35.76L235.63 35.81C239.71 35.81 250.8 36.09 254.42 35.65L254.41 50.88C240.77 50.8 227.13 50.8 213.49 50.88L213.5 74.35C224.55 74.34 238.41 74.73 249.19 74.27L249.2 89.72C245.21 89.42 239.53 89.58 235.43 89.59L213.5 89.63L213.48 113L256.08 112.93L256.07 128.1C251.92 127.62 239.13 127.9 234.38 127.93C221.69 128 208.64 127.75 196 127.94V35.76Z" />
+                    {/* x */}
+                    <path d="M311.84 57.11C314.84 57.1 327.11 56.86 329.38 57.21L329.61 57.85C329.33 60.38 324.21 67.34 322.51 69.92C317.65 77.19 312.85 84.49 308.1 91.83C309.12 93.85 311.98 98.15 313.27 100.2L323.96 117.11C325.9 120.18 329.18 124.46 329.55 127.99C323.66 127.75 316.57 127.94 310.59 127.95C307.78 122.8 304.08 117.69 301.1 112.6C299.2 109.35 296.93 105.77 294.71 102.75C293.77 104.89 290.7 109.57 289.36 111.72C285.99 117.17 282.58 122.58 279.12 127.96C276.6 127.91 261.82 128.24 260.67 127.62C260.25 126.01 261.8 123.53 262.7 122.21C269.33 112.52 275.11 101.26 281.98 91.83C281.56 91.33 281.15 90.8 280.77 90.26C279.99 89.13 279.24 87.93 278.49 86.76C272.55 77.6 266.26 68.63 260.48 59.37C260.19 58.91 260.44 57.65 260.54 57.11C266.33 57.05 272.13 57.07 277.92 57.16C283.45 64.94 289.73 74.44 294.84 82.5C296.78 80.01 299.25 76.07 301.02 73.39L311.84 57.11Z" />
+                    {/* x */}
+                    <path d="M331.8 57.07C337.59 57.12 343.35 57.01 349.16 57.17C351.07 59.34 353.39 63.17 355.06 65.63C358.85 71.21 362.43 77.01 366.36 82.49C370.85 75.07 378.27 64.14 383.33 57.1C385.63 57.09 399.69 56.84 400.87 57.31C401.39 58.6 399.76 61.11 399.01 62.17C392.22 71.73 386.21 82.47 379.27 91.86C383.35 97.67 387.27 104.53 391.17 110.53C393.16 113.61 400.63 124.78 400.95 127.56C399.88 128.24 384.1 127.95 382 127.95C377.12 119.68 371.36 110.9 366.22 102.72C364.99 105.11 362.37 109.02 360.85 111.44C357.4 116.92 353.99 122.43 350.62 127.97C348.24 127.9 332.9 128.28 332.17 127.57C332.12 126.75 332.07 125.83 332.45 125.1C334.5 121.17 337.29 117.06 339.66 113.31L353.19 91.8C352.42 90.71 351.63 89.5 350.9 88.36C344.71 78.72 337.87 69.39 332.08 59.51C331.71 58.88 331.75 57.78 331.8 57.07Z" />
+                    {/* a */}
+                    <path d="M430.76 55.73C443.6 55.26 459.71 58.4 463.18 73.14C464.17 77.36 463.88 82.7 463.88 87.04L463.85 105.91C463.86 112.15 463.05 112.65 469.33 113.21C469.06 117.66 469.23 123.63 469.24 128.19C461.17 128.15 448.96 129.82 446.76 119.67C444.47 122.42 443.57 123.61 440.36 125.6C433.88 129.64 423.42 129.93 416.18 128.17C410.38 126.76 405.62 123.52 402.51 118.29C400.53 114.23 400.12 109.48 400.65 105.07C402.51 89.56 418.76 87.6 431.17 85.93C435.52 85.24 440.83 84.65 444.47 82.01C447.55 79.77 447.17 76.53 444.97 73.79C440.68 68.46 429.52 68.1 424.36 72.21C421.36 74.59 420.83 77.87 420.5 81.44C414.44 81.38 408.37 81.38 402.31 81.45C402.5 79.52 402.65 77.4 403.03 75.51C405.77 61.78 418.1 56.41 430.76 55.73ZM420.85 112.9C428.03 116.95 440.99 113.87 444.94 106.31C445.85 104.56 447.93 97.68 446.7 95.97L446.34 95.91C442.71 97.49 435.91 98.87 431.8 99.34C425.34 100.07 411.45 104.69 420.85 112.9Z" />
+                    {/* t */}
+                    <path d="M479.84 35.85C485.68 35.89 491.52 35.89 497.37 35.85C497.15 42.48 497.33 50.27 497.32 56.98L514.28 56.95L514.29 72.1C508.64 72.05 502.99 72.04 497.34 72.05L497.31 93.56C497.31 97.07 496.58 108.12 499.41 110.47C502.23 112.82 510.46 112.62 514.29 112.14L514.28 123.53L514.28 127.44C511.12 127.9 507.91 128.15 504.7 128.19C479.71 128.49 479.89 117.27 479.92 96.95C479.95 88.66 479.94 80.38 479.88 72.09C479.84 35.85 479.84 35.85 479.84 35.85Z" />
+                  </g>
+
+                  <defs>
+                    <linearGradient id="exxat-gradient-header" x1="28.37" y1="134.25" x2="117.19" y2="30.9" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stop-color="#E21C79" />
+                      <stop offset="1" stop-color="#EF609D" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="w-px h-5 hidden sm:block bg-border shrink-0"></div>
+                <div className="flex flex-col min-w-0">
+                  <h1 className="font-bold text-sm truncate text-foreground leading-tight">
+                    Anatomy &amp; Physiology — Midterm Exam
+                  </h1>
+                  <span className="text-xs text-muted-foreground truncate font-medium">
+                    BIO-301-A
+                  </span>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <div className="flex-1 flex flex-col justify-start items-center p-6 md:p-8 overflow-y-auto bg-background animate-card-enter">
+            {/* Split layout container */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mx-auto text-left items-start mt-4">
+              
+              {/* Left Column: Instructions (col-span-2) */}
+              <div className="md:col-span-2 flex flex-col gap-6">
+                <div>
+                  <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
+                    Instructions
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Read the following carefully before you begin.
+                  </p>
+                </div>
+
+                {/* Faculty Instructions */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-bold text-foreground text-sm">Faculty Instructions</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--exam-accent-light)] text-[var(--exam-accent)] border border-[var(--exam-accent-border)] uppercase tracking-wider">From your instructor</span>
+                  </div>
+                  <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto">
+                    <p>Covers Chapters 12–18. Closed book. No reference materials. A proctor password will be provided at exam time.</p>
+                    <div className="mt-4 border-t pt-3 border-border/60">
+                      <span className="text-xs font-bold text-muted-foreground block mb-2">Reference Materials Available:</span>
+                      <ul className="list-disc pl-4 text-xs flex flex-col gap-2 text-muted-foreground font-semibold">
+                        <li className="flex items-center gap-1.5"><i className="fa-light fa-function" style={{ fontSize: "14px" }} /> Pharmacokinetic Formulas</li>
+                        <li className="flex items-center gap-1.5"><i className="fa-light fa-calculator" style={{ fontSize: "14px" }} /> Dosage Calculations</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-                {passwordError && (
-                  <span className="text-[10px] text-destructive font-semibold flex items-center gap-1 mt-0.5">
-                    <i className="fa-solid fa-circle-exclamation" /> {passwordError}
+
+                {/* Instructions */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-bold text-foreground text-sm">Instructions</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">Academic Integrity</span>
+                  </div>
+                  <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto font-medium">
+                    <p>By taking this assessment, you agree to complete all questions independently without the assistance of any unauthorized resources, other students, or external parties. You understand that any form of academic dishonesty may result in a failing grade, academic probation, or dismissal from the program in accordance with your institution's code of conduct.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Exam Details & CTA Card (col-span-1) */}
+              <div className="md:col-span-1 flex flex-col gap-4 p-5 bg-card border border-border rounded-2xl shadow-md sticky top-6">
+                
+                {/* Header Stats */}
+                <div className="grid grid-cols-3 gap-2 text-center border-b pb-4 border-border">
+                  <div className="flex flex-col items-center">
+                    <span className="text-base font-bold text-foreground">27</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Questions</span>
+                  </div>
+                  <div className="flex flex-col items-center border-x border-border">
+                    <span className="text-base font-bold text-foreground">2h 00m</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Time</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-base font-bold text-foreground">75%</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Pass</span>
+                  </div>
+                </div>
+
+                {/* 1. Proctor Password Input */}
+                <div className="flex flex-col gap-1.5 text-left px-0.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <i className="fa-solid fa-lock text-[var(--exam-accent)]" />
+                    Proctor Password Required
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setPasswordError('');
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && attested && password) {
+                          handleStartExam();
+                        }
+                      }}
+                      placeholder="Enter proctor password"
+                      className="w-full pl-8 pr-3 py-2.5 rounded-xl border bg-background border-border text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[var(--exam-accent)]/20 focus:border-[var(--exam-accent)] font-semibold transition-all"
+                    />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                      <i className="fa-light fa-key text-[13px]" />
+                    </div>
+                  </div>
+                  {passwordError && (
+                    <span className="text-[10px] text-destructive font-semibold flex items-center gap-1 mt-0.5">
+                      <i className="fa-solid fa-circle-exclamation" /> {passwordError}
+                    </span>
+                  )}
+                </div>
+
+                {/* 2. Attestation Checkbox */}
+                <div className="flex items-start gap-2 py-1 px-0.5 select-none text-left">
+                  <input
+                    type="checkbox"
+                    id="attestation"
+                    checked={attested}
+                    onChange={(e) => setAttested(e.target.checked)}
+                    className="mt-0.5 size-4 rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer"
+                  />
+                  <label htmlFor="attestation" className="text-xs font-medium text-foreground cursor-pointer select-none leading-normal">
+                    I understand the instructions and agree to all the <span className="underline hover:text-[var(--exam-accent)] transition-colors">terms and conditions</span>
+                  </label>
+                </div>
+
+                {/* 3. Start CTA */}
+                <div className="flex flex-col items-center gap-1.5 w-full border-b pb-4 border-border/60">
+                  <button
+                    onClick={handleStartExam}
+                    disabled={!attested || !password}
+                    className="w-full bg-[var(--exam-accent)] hover:opacity-90 disabled:opacity-40 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                  >
+                    Start Exam <i className="fa-light fa-play" />
+                  </button>
+                  <span className="text-[10px] text-muted-foreground font-semibold">
+                    Clicking 'Start Exam' with start the exam timer
                   </span>
-                )}
-              </div>
-
-              {/* 2. Attestation Checkbox */}
-              <div className="flex items-start gap-2 py-1 px-0.5 select-none text-left">
-                <input
-                  type="checkbox"
-                  id="attestation"
-                  checked={attested}
-                  onChange={(e) => setAttested(e.target.checked)}
-                  className="mt-0.5 size-4 rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer"
-                />
-                <label htmlFor="attestation" className="text-xs font-medium text-foreground cursor-pointer select-none leading-normal">
-                  I understand the instructions and agree to all the <span className="underline hover:text-[var(--exam-accent)] transition-colors">terms and conditions</span>
-                </label>
-              </div>
-
-              {/* 3. Start CTA */}
-              <div className="flex flex-col items-center gap-1.5 w-full border-b pb-4 border-border/60">
-                <button
-                  onClick={handleStartExam}
-                  disabled={!attested || !password}
-                  className="w-full bg-[var(--exam-accent)] hover:opacity-90 disabled:opacity-40 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
-                >
-                  Start Exam <i className="fa-light fa-play" />
-                </button>
-                <span className="text-[10px] text-muted-foreground font-semibold">
-                  Clicking 'Start Exam' with start the exam timer
-                </span>
-              </div>
-
-              {/* 4. Special Accommodations */}
-              <div className="flex flex-col gap-1.5 text-left text-amber-600 dark:text-amber-400 px-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                  <i className="fa-solid fa-universal-access" />
-                  Accommodations
-                </span>
-                <ul className="list-disc pl-4 text-[10px] leading-relaxed font-semibold flex flex-col gap-0.5 font-sans">
-                  <li>Extra Time (+5 mins added)</li>
-                  <li>External Keyboard Allowed</li>
-                </ul>
-              </div>
-
-              {/* 5. Reduced Weight Details list */}
-              <div className="flex flex-col gap-2 text-[10px] text-muted-foreground pt-1">
-                <div className="flex justify-between items-center">
-                  <span>Exam Name</span>
-                  <span className="font-semibold text-foreground/80 text-right">Anatomy &amp; Physiology Midterm</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Course</span>
-                  <span className="font-semibold text-foreground/80 text-right">BIO-301-A</span>
+
+                {/* 4. Special Accommodations */}
+                <div className="flex flex-col gap-1.5 text-left text-amber-600 dark:text-amber-400 px-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                    <i className="fa-solid fa-universal-access" />
+                    Accommodations
+                  </span>
+                  <ul className="list-disc pl-4 text-[10px] leading-relaxed font-semibold flex flex-col gap-0.5 font-sans">
+                    <li>Extra Time (+5 mins added)</li>
+                    <li>External Keyboard Allowed</li>
+                  </ul>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Results</span>
-                  <span className="font-semibold text-foreground/80 text-right">Released after instructor review</span>
+
+                {/* 5. Reduced Weight Details list */}
+                <div className="flex flex-col gap-2 text-[10px] text-muted-foreground pt-1">
+                  <div className="flex justify-between items-center">
+                    <span>Exam Name</span>
+                    <span className="font-semibold text-foreground/80 text-right">Anatomy &amp; Physiology Midterm</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Course</span>
+                    <span className="font-semibold text-foreground/80 text-right">BIO-301-A</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Results</span>
+                    <span className="font-semibold text-foreground/80 text-right">Released after instructor review</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Security</span>
+                    <span className="font-semibold text-foreground/80 text-right">Proctored Assessment</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Security</span>
-                  <span className="font-semibold text-foreground/80 text-right">Proctored Assessment</span>
-                </div>
+
               </div>
 
             </div>
-
           </div>
-        </div>
+        </>
       )}
 
       {/* PHASE 2: SECTION INTRO */}
@@ -938,42 +1138,949 @@ export default function ExamTakePage() {
       )}
 
       {/* PHASE 4: SUBMITTED PORTAL */}
-      {phase === 'submitted' && (
-        <div className="flex-1 flex items-center justify-center p-6 bg-muted/30">
-          <div className="max-w-md w-full p-8 rounded-2xl border bg-card shadow-lg text-center flex flex-col gap-6 animate-card-enter border-border">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
-              <i className="fa-solid fa-circle-check" style={{ fontSize: "28px" }} />
-            </div>
-            
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Assessment Submitted
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your responses have been securely logged.
-              </p>
-            </div>
+      {phase === 'submitted' && (() => {
+        // Calculate scores
+        const objCorrect = questions.filter(q => q.type !== 'essay' && isQuestionCorrect(q)).length;
+        const subjectiveScore = adminGradingStatus === 'complete' ? 1.8 : 0;
+        const totalPointsEarned = objCorrect + subjectiveScore;
+        const totalMaxPoints = 27;
+        const objectiveMaxPoints = 25;
+        
+        const rawObjectivePercent = (objCorrect / objectiveMaxPoints) * 100;
+        const finalOverallPercent = (totalPointsEarned / totalMaxPoints) * 100;
+        
+        // Section details helper
+        const getSectionStats = (secId: number) => {
+          const secQ = questions.filter(q => q.sectionId === secId);
+          const total = secQ.length;
+          
+          if (secId === 4) { // Subjective section
+            if (adminGradingStatus === 'pending') {
+              return { scoreText: 'Evaluation in progress', percent: 0, status: 'pending', correct: 0, total };
+            } else {
+              return { scoreText: '1.8 / 2.0 pts', percent: 90, status: 'complete', correct: 1.8, total };
+            }
+          }
+          
+          const correct = secQ.filter(isQuestionCorrect).length;
+          const percent = total > 0 ? (correct / total) * 100 : 0;
+          return {
+            scoreText: `${correct} / ${total}`,
+            percent,
+            status: 'complete',
+            correct,
+            total
+          };
+        };
 
-            <div className="p-4 rounded-xl border text-left bg-muted/40 border-border">
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Questions Answered</span>
-                <span className="text-sm font-bold text-foreground">{getAnsweredCount()} / {questions.length}</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Time Elapsed</span>
-                <span className="text-sm font-bold text-foreground">{formatTime(7200 - timeLeft)}</span>
-              </div>
-            </div>
+        // Determine Pass/Fail status (Threshold 75%)
+        const passingThreshold = 75;
+        const isPassed = adminGradingStatus === 'complete' 
+          ? finalOverallPercent >= passingThreshold 
+          : rawObjectivePercent >= passingThreshold;
 
-            <button
-              onClick={() => navigate("/design-os/dashboard")}
-              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer"
-            >
-              Return to Student Dashboard
-            </button>
+        // Custom download PDF action
+        const handleDownloadKey = () => {
+          const toast = document.createElement('div');
+          toast.className = 'fixed bottom-5 right-5 bg-foreground text-background px-4 py-3 rounded-xl shadow-lg font-semibold text-xs flex items-center gap-2 animate-bounce z-50';
+          toast.innerHTML = '<i class="fa-light fa-file-arrow-down text-base" /> Generating PDF Answer Key download...';
+          document.body.appendChild(toast);
+          setTimeout(() => {
+            toast.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500 text-base" /> Download Complete: A&P_Midterm_Key.pdf';
+            setTimeout(() => {
+              document.body.removeChild(toast);
+            }, 2000);
+          }, 1500);
+        };
+
+        // Filtered questions list for key review
+        const filteredQuestions = questions.filter(q => {
+          if (keyFilter === 'all') return true;
+          const correct = q.type !== 'essay' && isQuestionCorrect(q);
+          const answered = isQuestionAnswered(q);
+          if (keyFilter === 'correct') return q.type !== 'essay' && correct;
+          if (keyFilter === 'incorrect') return q.type !== 'essay' && answered && !correct;
+          if (keyFilter === 'unanswered') return !answered;
+          return true;
+        });
+
+        return (
+          <div className="flex-1 w-full overflow-y-auto bg-muted/10">
+            {/* HEADER */}
+            <header className="border-b flex flex-col shrink-0 z-40 sticky top-0 bg-card border-border shadow-sm w-full">
+              <div className="h-14 flex items-center justify-between px-6">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <svg viewBox="0 0 514 164" className="hidden sm:block shrink-0 h-6 text-foreground" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Exxat Logo">
+                    <path
+                      d="M73.49 155.24C114.08 155.24 146.99 122.33 146.99 81.74C146.99 41.15 114.08 8.25 73.49 8.25C32.9 8.25 0 41.15 0 81.74C0 122.33 32.9 155.24 73.49 155.24Z"
+                      fill="url(#exxat-gradient-header)"
+                    />
+                    <path
+                      d="M0.59 90.99C4.6 122.92 29.09 148.47 60.5 154.09L102.46 116.36V102.3H86.83L102.46 88.25V74.2H86.83L102.46 60.14V46.09H50.56L0.59 90.99Z"
+                      fill="#BE1E6D"
+                    />
+                    <path d="M102.47 116.36H50.56L58.68 102.3H102.47V116.36Z" fill="white" />
+                    <path d="M102.47 60.13H58.68L50.56 46.08H102.47V60.13Z" fill="white" />
+                    <path d="M102.47 88.24H66.79L70.85 81.21L66.79 74.18H102.47V88.24Z" fill="white" />
+                    <path d="M39.22 74.18H66.8L58.68 60.13H39.22V74.18Z" fill="white" />
+                    <path d="M39.22 102.3H58.68L66.8 88.24H39.22V102.3Z" fill="white" />
+
+                    <g className="fill-current">
+                      {/* E */}
+                      <path d="M196 35.76L235.63 35.81C239.71 35.81 250.8 36.09 254.42 35.65L254.41 50.88C240.77 50.8 227.13 50.8 213.49 50.88L213.5 74.35C224.55 74.34 238.41 74.73 249.19 74.27L249.2 89.72C245.21 89.42 239.53 89.58 235.43 89.59L213.5 89.63L213.48 113L256.08 112.93L256.07 128.1C251.92 127.62 239.13 127.9 234.38 127.93C221.69 128 208.64 127.75 196 127.94V35.76Z" />
+                      {/* x */}
+                      <path d="M311.84 57.11C314.84 57.1 327.11 56.86 329.38 57.21L329.61 57.85C329.33 60.38 324.21 67.34 322.51 69.92C317.65 77.19 312.85 84.49 308.1 91.83C309.12 93.85 311.98 98.15 313.27 100.2L323.96 117.11C325.9 120.18 329.18 124.46 329.55 127.99C323.66 127.75 316.57 127.94 310.59 127.95C307.78 122.8 304.08 117.69 301.1 112.6C299.2 109.35 296.93 105.77 294.71 102.75C293.77 104.89 290.7 109.57 289.36 111.72C285.99 117.17 282.58 122.58 279.12 127.96C276.6 127.91 261.82 128.24 260.67 127.62C260.25 126.01 261.8 123.53 262.7 122.21C269.33 112.52 275.11 101.26 281.98 91.83C281.56 91.33 281.15 90.8 280.77 90.26C279.99 89.13 279.24 87.93 278.49 86.76C272.55 77.6 266.26 68.63 260.48 59.37C260.19 58.91 260.44 57.65 260.54 57.11C266.33 57.05 272.13 57.07 277.92 57.16C283.45 64.94 289.73 74.44 294.84 82.5C296.78 80.01 299.25 76.07 301.02 73.39L311.84 57.11Z" />
+                      {/* x */}
+                      <path d="M331.8 57.07C337.59 57.12 343.35 57.01 349.16 57.17C351.07 59.34 353.39 63.17 355.06 65.63C358.85 71.21 362.43 77.01 366.36 82.49C370.85 75.07 378.27 64.14 383.33 57.1C385.63 57.09 399.69 56.84 400.87 57.31C401.39 58.6 399.76 61.11 399.01 62.17C392.22 71.73 386.21 82.47 379.27 91.86C383.35 97.67 387.27 104.53 391.17 110.53C393.16 113.61 400.63 124.78 400.95 127.56C399.88 128.24 384.1 127.95 382 127.95C377.12 119.68 371.36 110.9 366.22 102.72C364.99 105.11 362.37 109.02 360.85 111.44C357.4 116.92 353.99 122.43 350.62 127.97C348.24 127.9 332.9 128.28 332.17 127.57C332.12 126.75 332.07 125.83 332.45 125.1C334.5 121.17 337.29 117.06 339.66 113.31L353.19 91.8C352.42 90.71 351.63 89.5 350.9 88.36C344.71 78.72 337.87 69.39 332.08 59.51C331.71 58.88 331.75 57.78 331.8 57.07Z" />
+                      {/* a */}
+                      <path d="M430.76 55.73C443.6 55.26 459.71 58.4 463.18 73.14C464.17 77.36 463.88 82.7 463.88 87.04L463.85 105.91C463.86 112.15 463.05 112.65 469.33 113.21C469.06 117.66 469.23 123.63 469.24 128.19C461.17 128.15 448.96 129.82 446.76 119.67C444.47 122.42 443.57 123.61 440.36 125.6C433.88 129.64 423.42 129.93 416.18 128.17C410.38 126.76 405.62 123.52 402.51 118.29C400.53 114.23 400.12 109.48 400.65 105.07C402.51 89.56 418.76 87.6 431.17 85.93C435.52 85.24 440.83 84.65 444.47 82.01C447.55 79.77 447.17 76.53 444.97 73.79C440.68 68.46 429.52 68.1 424.36 72.21C421.36 74.59 420.83 77.87 420.5 81.44C414.44 81.38 408.37 81.38 402.31 81.45C402.5 79.52 402.65 77.4 403.03 75.51C405.77 61.78 418.1 56.41 430.76 55.73ZM420.85 112.9C428.03 116.95 440.99 113.87 444.94 106.31C445.85 104.56 447.93 97.68 446.7 95.97L446.34 95.91C442.71 97.49 435.91 98.87 431.8 99.34C425.34 100.07 411.45 104.69 420.85 112.9Z" />
+                      {/* t */}
+                      <path d="M479.84 35.85C485.68 35.89 491.52 35.89 497.37 35.85C497.15 42.48 497.33 50.27 497.32 56.98L514.28 56.95L514.29 72.1C508.64 72.05 502.99 72.04 497.34 72.05L497.31 93.56C497.31 97.07 496.58 108.12 499.41 110.47C502.23 112.82 510.46 112.62 514.29 112.14L514.28 123.53L514.28 127.44C511.12 127.9 507.91 128.15 504.7 128.19C479.71 128.49 479.89 117.27 479.92 96.95C479.95 88.66 479.94 80.38 479.88 72.09C479.84 35.85 479.84 35.85 479.84 35.85Z" />
+                    </g>
+
+                    <defs>
+                      <linearGradient id="exxat-gradient-header" x1="28.37" y1="134.25" x2="117.19" y2="30.9" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#E21C79" />
+                        <stop offset="1" stop-color="#EF609D" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="w-px h-5 hidden sm:block bg-border shrink-0"></div>
+                  <div className="flex flex-col min-w-0">
+                    <h1 className="font-bold text-sm truncate text-foreground leading-tight">
+                      Anatomy &amp; Physiology — Midterm Exam
+                    </h1>
+                    <span className="text-xs text-muted-foreground truncate font-medium">
+                      BIO-301-A
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                    Completed
+                  </span>
+                  <button
+                    onClick={() => setIsAdminPanelOpen(!isAdminPanelOpen)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                      isAdminPanelOpen 
+                        ? 'bg-indigo-600 border-indigo-700 text-white shadow-xs' 
+                        : 'bg-muted border-border text-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    <i className="fa-light fa-sliders text-xs" />
+                    <span>{isAdminPanelOpen ? "Hide Simulator" : "Show Simulator"}</span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/design-os/dashboard")}
+                    className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground rounded-lg text-xs font-bold transition-all border border-border cursor-pointer"
+                  >
+                    Go to Dashboard
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            {/* Main Content Area */}
+            <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col lg:flex-row gap-8">
+              
+              {/* Left Column: Student Portal View */}
+              <div className="flex-grow lg:flex-1 min-w-0 flex flex-col gap-6">
+                
+                {/* Sleek Successful Submission Banner */}
+                <div className="bg-emerald-500/10 border-l-4 border-l-emerald-500 border-y border-r border-emerald-500/20 p-4 rounded-xl flex items-start gap-3 shadow-xs animate-card-enter">
+                  <i className="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base mt-0.5" />
+                  <div>
+                    <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Assessment Submitted Successfully!</h2>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Your responses have been successfully recorded and logged.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 1. Results Summary Widget (Fully removed if results visibility is off) */}
+                {!adminShowResults ? (
+                  <div className="bg-card border border-border p-8 rounded-2xl shadow-sm text-center flex flex-col items-center gap-4 animate-card-enter">
+                    <div className="w-14 h-14 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 flex items-center justify-center">
+                      <i className="fa-solid fa-clock-three text-xl" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-foreground">Results are being processed by the faculty</h2>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
+                        You will receive an email when they are finalised.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {/* Score Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      {/* Score Widget */}
+                      {adminResultType !== 'hidden' && (
+                        <div className="bg-card border border-border p-6 rounded-2xl shadow-sm flex flex-col justify-between gap-4 animate-card-enter">
+                          <div>
+                            <div className="flex justify-between items-center mb-3">
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Assessment Performance</h3>
+                              {adminGradingStatus === 'pending' ? (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md uppercase tracking-wider flex items-center gap-1">
+                                  <i className="fa-solid fa-spinner animate-spin text-[9px]" /> Grading
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-md uppercase tracking-wider flex items-center gap-1">
+                                  <i className="fa-solid fa-badge-check text-[9px]" /> Graded
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Split Scores: Objective and Subjective */}
+                            <div className="flex flex-col gap-3.5 my-2">
+                              {/* Objective Questions Row */}
+                              <div className="flex justify-between items-center py-2 border-b border-border/40">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Objective Questions</span>
+                                <span className="text-sm font-extrabold text-foreground">
+                                  {objCorrect} / {objectiveMaxPoints} pts <span className="text-muted-foreground text-xs font-semibold">({rawObjectivePercent.toFixed(0)}%)</span>
+                                </span>
+                              </div>
+
+                              {/* Subjective Questions Row */}
+                              <div className="flex justify-between items-start py-1.5">
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Subjective Questions</span>
+                                  {adminGradingStatus === 'pending' && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium mt-0.5 flex items-center gap-1 leading-none">
+                                      <i className="fa-solid fa-circle-info text-[9px]" /> Subjective portion being evaluated
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-sm font-extrabold text-foreground shrink-0">
+                                  {adminGradingStatus === 'pending' ? (
+                                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase">In Progress</span>
+                                  ) : (
+                                    `${subjectiveScore.toFixed(1)} / 2.0 pts (${(subjectiveScore / 2 * 100).toFixed(0)}%)`
+                                  )}
+                                </span>
+                              </div>
+
+                              {/* Total Overall Score (Only shown if grading is complete and result type is score) */}
+                              {adminGradingStatus === 'complete' && adminResultType === 'score' && (
+                                <div className="mt-2 pt-3.5 border-t border-border flex justify-between items-center">
+                                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">Final Overall Grade</span>
+                                  <span className="text-sm font-black text-[var(--exam-accent)]">
+                                    {totalPointsEarned.toFixed(1)} / {totalMaxPoints} pts ({finalOverallPercent.toFixed(1)}%)
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Pass / Fail Display */}
+                            {adminResultType === 'pass-fail' && (
+                              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/60">
+                                {adminGradingStatus === 'pending' ? (
+                                  <div className="flex items-center gap-3">
+                                    <div className="px-3 py-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                                      <i className="fa-solid fa-clock text-[10px]" /> Status Pending
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground font-semibold">
+                                      Objective performance is {rawObjectivePercent.toFixed(0)}% (Requires {passingThreshold}% overall)
+                                    </span>
+                                  </div>
+                                ) : isPassed ? (
+                                  <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg font-extrabold text-sm uppercase tracking-wider flex items-center gap-1.5 animate-card-enter">
+                                    <i className="fa-solid fa-circle-check" /> PASS
+                                  </div>
+                                ) : (
+                                  <div className="px-4 py-1.5 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg font-extrabold text-sm uppercase tracking-wider flex items-center gap-1.5 animate-card-enter">
+                                    <i className="fa-solid fa-circle-exclamation" /> FAIL
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Course Weight Contribution Roll-up (Fully hidden when subjective evaluation is pending) */}
+                      {adminShowResults && adminGradingStatus === 'complete' && (
+                        <div className="bg-card border border-border p-6 rounded-2xl shadow-sm flex flex-col justify-between gap-4 animate-card-enter">
+                          <div>
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Course Grade Impact</h3>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-3xl font-extrabold tracking-tight text-foreground">
+                                {((finalOverallPercent / 100) * adminCourseWeight).toFixed(2)}%
+                              </span>
+                              <span className="text-sm font-semibold text-muted-foreground">
+                                / {adminCourseWeight}% Course Weight
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted h-2.5 rounded-full mt-4 overflow-hidden relative border border-border/40">
+                              <div 
+                                className="bg-indigo-600 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${finalOverallPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div className="text-[11px] text-muted-foreground font-medium pt-1">
+                            Calculated as: <span className="font-semibold text-foreground">Earned Score (%) × Course Weight ({adminCourseWeight}%)</span>.
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+
+                    {/* Pre-curving Active Disclaimer */}
+                    {adminPreCurving && (
+                      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3 text-xs leading-normal text-amber-800 dark:text-amber-300 font-medium animate-card-enter">
+                        <i className="fa-solid fa-circle-exclamation text-base mt-0.5 shrink-0" />
+                        <div>
+                          The current scores reflect your raw performance. Final results will be shared once the grading and curving process is complete.
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. Section Level Breakdown (Fully removed if section performance visibility is off) */}
+                    {adminShowSectionPerformance && (
+                      <div className="bg-card border border-border p-6 rounded-2xl shadow-sm animate-card-enter">
+                        <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                          <i className="fa-light fa-layer-group text-[var(--exam-accent)]" /> Section-Level Breakdown
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[1, 2, 3, 4, 5, 6].map((secId) => {
+                            const isSecVisible = adminSectionVisibility[secId];
+                            const stats = getSectionStats(secId);
+                            const name = secId === 1 ? "Nervous System"
+                              : secId === 2 ? "Musculoskeletal & Cardiovascular"
+                              : secId === 3 ? "Endocrine & Renal"
+                              : secId === 4 ? "Respiratory & Gastrointestinal"
+                              : secId === 5 ? "Cardiovascular Anatomy"
+                              : "Pharmacology & Microbiology";
+
+                            return (
+                              <div key={secId} className="border border-border/60 rounded-xl p-4 bg-muted/20 flex flex-col gap-2">
+                                <div className="flex justify-between items-start">
+                                  <span className="text-xs font-bold text-foreground leading-snug">Sec {secId}: {name}</span>
+                                  {!isSecVisible ? (
+                                    <span className="px-2 py-0.5 text-[9px] font-bold bg-muted border border-border rounded text-muted-foreground uppercase flex items-center gap-1 shrink-0 select-none">
+                                      <i className="fa-solid fa-lock" /> Hidden
+                                    </span>
+                                  ) : (
+                                    <span className={`text-xs font-bold ${stats.status === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'} shrink-0`}>
+                                      {stats.scoreText}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {isSecVisible ? (
+                                  stats.status === 'pending' ? (
+                                    <div className="text-[10px] text-amber-600 dark:text-amber-400 italic mt-1 font-semibold flex items-center gap-1">
+                                      <i className="fa-solid fa-spinner animate-spin text-[9px]" /> Evaluation in progress
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-3 mt-1">
+                                      <div className="flex-1 bg-muted h-1.5 rounded-full overflow-hidden">
+                                        <div 
+                                          className={`h-full rounded-full transition-all duration-300 ${
+                                            stats.percent >= 75 ? 'bg-emerald-500' : 'bg-indigo-500'
+                                          }`}
+                                          style={{ width: `${stats.percent}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-[10px] font-bold text-muted-foreground">
+                                        {stats.percent.toFixed(0)}%
+                                      </span>
+                                    </div>
+                                  )
+                                ) : (
+                                  <div className="text-[10px] italic text-muted-foreground mt-1">
+                                    Section details restricted by administrator.
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. Answer Key & Rationale Viewer (Fully removed if key visibility is off) */}
+                {adminKeyVisibility && (
+                  <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col animate-card-enter">
+                    {/* Header bar (PDF Download button is exclusive/always visible in key widget) */}
+                    <div className="bg-muted/30 border-b border-border px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div>
+                        <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                          <i className="fa-light fa-spell-check text-[var(--exam-accent)]" />
+                          Answer Key &amp; Explanations
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {adminKeyType === 'answers-only' ? 'Compact master key' 
+                            : adminKeyType === 'match' ? 'Detailed correct/incorrect comparison'
+                            : adminKeyType === 'match-rationale' ? 'Comparison with answers, rationales, and details'
+                            : 'Study Guide mode (Student choices hidden)'}
+                        </p>
+                      </div>
+                      
+                      <button
+                        onClick={handleDownloadKey}
+                        className="px-3 py-1.5 bg-[var(--exam-accent)] text-white hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+                      >
+                        <i className="fa-light fa-file-arrow-down" /> Download Key (PDF)
+                      </button>
+                    </div>
+
+                    {/* Filter controls (Only for Type 2, 3, 4) */}
+                    {adminKeyType !== 'answers-only' && (
+                      <div className="px-6 py-3 border-b border-border/60 bg-muted/10 flex flex-wrap gap-2 items-center text-xs">
+                        <span className="font-bold text-muted-foreground uppercase tracking-wider mr-2">Filter questions:</span>
+                        {[
+                          { id: 'all', label: `All (${questions.length})` },
+                          { id: 'correct', label: `Correct (${objCorrect})` },
+                          { id: 'incorrect', label: `Incorrect (${25 - objCorrect})` },
+                          { id: 'unanswered', label: 'Unanswered (0)' }
+                        ].map((btn) => (
+                          <button
+                            key={btn.id}
+                            onClick={() => setKeyFilter(btn.id as any)}
+                            className={`px-3 py-1 rounded-lg border font-semibold transition-all cursor-pointer ${
+                              keyFilter === btn.id
+                                ? 'bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)] font-bold'
+                                : 'border-border text-muted-foreground hover:bg-muted'
+                            }`}
+                          >
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Inner content switcher based on adminKeyType */}
+                    <div className="p-6">
+                      
+                      {/* TYPE 1: Answers Only (Compact Grid) */}
+                      {adminKeyType === 'answers-only' && (
+                        <div className="flex flex-col gap-6 animate-card-enter">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                            {questions.map((q, idx) => {
+                              const isSubj = q.type === 'essay';
+                              const correctAnsLetter = isSubj 
+                                ? 'Faculty Graded'
+                                : q.type === 'mcq-single' || q.type === 'dropdown' || q.type === 'hotspot'
+                                ? correctAnswers[q.id]
+                                : q.type === 'mcq-multiple'
+                                ? correctAnswers[q.id].join(', ')
+                                : q.type === 'fill-blank'
+                                ? `${correctAnswers[q.id].blank1}, ${correctAnswers[q.id].blank2}`
+                                : 'Match Key';
+
+                              return (
+                                <div key={q.id} className="border border-border/80 rounded-xl p-3 bg-muted/20 text-center flex flex-col items-center justify-center min-h-[80px]">
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Q{q.id}</span>
+                                  <span className={`text-xs font-black mt-1.5 leading-tight ${isSubj ? 'text-amber-500 font-bold' : 'text-foreground font-sans'}`}>
+                                    {correctAnsLetter}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TYPE 2, 3, 4: Detailed Question lists */}
+                      {adminKeyType !== 'answers-only' && (
+                        <div className="flex flex-col gap-6 max-h-[600px] overflow-y-auto pr-1">
+                          {filteredQuestions.length === 0 ? (
+                            <div className="text-center py-8 text-xs text-muted-foreground italic">
+                              No questions match the selected filter.
+                            </div>
+                          ) : (
+                            filteredQuestions.map((q) => {
+                              const isCorrect = q.type !== 'essay' && isQuestionCorrect(q);
+                              const isAnswered = isQuestionAnswered(q);
+                              const stuAns = answers[q.id];
+                              const corrAns = correctAnswers[q.id];
+                              const hasRationale = adminKeyType === 'match-rationale' || adminKeyType === 'rationale-only';
+                              const showComparison = adminKeyType !== 'rationale-only'; // Hide student choices in Rationale-Only Study Guide
+
+                              return (
+                                <div 
+                                  key={q.id} 
+                                  className="border border-border rounded-xl p-5 bg-card flex flex-col gap-4 transition-all hover:border-border/80 animate-card-enter"
+                                >
+                                  {/* Header Info */}
+                                  <div className="flex justify-between items-center border-b pb-2.5 border-border/60">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-extrabold text-xs text-foreground">QUESTION {q.id}</span>
+                                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                                        · Section {q.sectionId}
+                                      </span>
+                                    </div>
+                                    
+                                    {showComparison && (
+                                      q.type === 'essay' ? (
+                                        adminGradingStatus === 'pending' ? (
+                                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-widest flex items-center gap-1">
+                                            <i className="fa-solid fa-spinner animate-spin text-[8px]" /> Evaluation Pending
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
+                                            Graded: 1.8 / 2.0 pts
+                                          </span>
+                                        )
+                                      ) : isCorrect ? (
+                                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest flex items-center gap-1">
+                                          <i className="fa-solid fa-circle-check text-[10px]" /> Correct
+                                        </span>
+                                      ) : !isAnswered ? (
+                                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-muted border border-border text-muted-foreground uppercase tracking-widest">
+                                          Unanswered
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-destructive/10 text-destructive border border-destructive/20 uppercase tracking-widest flex items-center gap-1">
+                                          <i className="fa-solid fa-circle-xmark text-[10px]" /> Incorrect
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+
+                                  {/* Question Text */}
+                                  <p className="text-xs font-bold text-foreground leading-relaxed">
+                                    {q.text}
+                                  </p>
+
+                                  {/* Answers Match Comparison Area */}
+                                  <div className="p-4 bg-muted/30 border border-border/40 rounded-xl flex flex-col gap-3 text-xs leading-normal">
+                                    {/* Render by type */}
+                                    {q.type === 'mcq-single' && (
+                                      <div className="flex flex-col gap-2">
+                                        {q.options?.map((opt) => {
+                                          const isOptCorrect = opt.letter === corrAns;
+                                          const isOptChosen = stuAns === opt.letter;
+                                          
+                                          let borderClass = "border-border/60 bg-card";
+                                          let badge = null;
+
+                                          if (isOptCorrect) {
+                                            borderClass = "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10";
+                                            badge = <span className="text-[10px] font-bold text-emerald-500 ml-auto flex items-center gap-1"><i className="fa-solid fa-check" /> Correct Option</span>;
+                                          } else if (isOptChosen && showComparison) {
+                                            borderClass = "border-destructive bg-destructive/5 dark:bg-destructive/10";
+                                            badge = <span className="text-[10px] font-bold text-destructive ml-auto flex items-center gap-1"><i className="fa-solid fa-xmark" /> Your Choice</span>;
+                                          }
+
+                                          return (
+                                            <div key={opt.letter} className={`flex items-center gap-2.5 p-2.5 rounded-lg border ${borderClass}`}>
+                                              <span className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${
+                                                isOptCorrect ? 'bg-emerald-500 text-white' : isOptChosen && showComparison ? 'bg-destructive text-white' : 'bg-muted text-muted-foreground'
+                                              }`}>
+                                                {opt.letter}
+                                              </span>
+                                              <span className="text-foreground font-medium">{opt.text}</span>
+                                              {badge}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {q.type === 'mcq-multiple' && (
+                                      <div className="flex flex-col gap-2">
+                                        {q.options?.map((opt) => {
+                                          const isOptCorrect = corrAns.includes(opt.letter);
+                                          const isOptChosen = Array.isArray(stuAns) && stuAns.includes(opt.letter);
+                                          
+                                          let borderClass = "border-border/60 bg-card";
+                                          let badge = null;
+
+                                          if (isOptCorrect) {
+                                            borderClass = "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10";
+                                            badge = <span className="text-[10px] font-bold text-emerald-500 ml-auto flex items-center gap-1"><i className="fa-solid fa-check" /> Correct Option</span>;
+                                          } else if (isOptChosen && showComparison) {
+                                            borderClass = "border-destructive bg-destructive/5 dark:bg-destructive/10";
+                                            badge = <span className="text-[10px] font-bold text-destructive ml-auto flex items-center gap-1"><i className="fa-solid fa-xmark" /> Your Choice</span>;
+                                          }
+
+                                          return (
+                                            <div key={opt.letter} className={`flex items-center gap-2.5 p-2.5 rounded-lg border ${borderClass}`}>
+                                              <span className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] ${
+                                                isOptCorrect ? 'bg-emerald-500 text-white' : isOptChosen && showComparison ? 'bg-destructive text-white' : 'bg-muted text-muted-foreground'
+                                              }`}>
+                                                {opt.letter}
+                                              </span>
+                                              <span className="text-foreground font-medium">{opt.text}</span>
+                                              {badge}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {q.type === 'dropdown' && (
+                                      <div className="flex flex-col gap-2 text-xs font-semibold">
+                                        {showComparison && (
+                                          <div className="flex justify-between border-b pb-1.5 border-border/40">
+                                            <span className="text-muted-foreground">Your response:</span>
+                                            <span className={stuAns === corrAns ? 'text-emerald-500 font-bold' : 'text-destructive font-bold'}>
+                                              {stuAns || '(Unanswered)'}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Correct response:</span>
+                                          <span className="text-emerald-500 font-bold">{corrAns}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {q.type === 'hotspot' && (
+                                      <div className="flex flex-col gap-2 text-xs font-semibold">
+                                        {showComparison && (
+                                          <div className="flex justify-between border-b pb-1.5 border-border/40">
+                                            <span className="text-muted-foreground">Your response:</span>
+                                            <span className={stuAns === corrAns ? 'text-emerald-500 font-bold' : 'text-destructive font-bold'}>
+                                              {stuAns || '(Unanswered)'}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Correct response:</span>
+                                          <span className="text-emerald-500 font-bold">{corrAns}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {q.type === 'fill-blank' && (
+                                      <div className="flex flex-col gap-2.5">
+                                        {Object.keys(corrAns).map((blankName, idx) => {
+                                          const stuVal = stuAns?.[blankName] || '';
+                                          const corrVal = corrAns[blankName];
+                                          const isBlankCorrect = stuVal === corrVal;
+
+                                          return (
+                                            <div key={blankName} className="flex flex-col gap-1 text-[11px]">
+                                              <span className="font-bold text-muted-foreground uppercase tracking-wider">Blank {idx+1}</span>
+                                              {showComparison && (
+                                                <div className="flex justify-between border-b pb-1 border-border/30">
+                                                  <span className="text-muted-foreground">Your selection:</span>
+                                                  <span className={isBlankCorrect ? 'text-emerald-500 font-bold' : 'text-destructive font-bold'}>
+                                                    {stuVal || '(Empty)'}
+                                                  </span>
+                                                </div>
+                                              )}
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Correct selection:</span>
+                                                <span className="text-emerald-500 font-bold">{corrVal}</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {q.type === 'match' && (
+                                      <div className="flex flex-col gap-2.5">
+                                        {Object.keys(corrAns).map((label) => {
+                                          const stuVal = stuAns?.[label] || '';
+                                          const corrVal = corrAns[label];
+                                          const isMatchCorrect = stuVal === corrVal;
+
+                                          return (
+                                            <div key={label} className="border border-border/40 rounded-lg p-2.5 bg-card flex flex-col gap-1 text-[11px]">
+                                              <span className="font-bold text-foreground">{label}</span>
+                                              {showComparison && (
+                                                <div className="flex justify-between border-b pb-1 border-border/30">
+                                                  <span className="text-muted-foreground">Your match:</span>
+                                                  <span className={isMatchCorrect ? 'text-emerald-500 font-bold' : 'text-destructive font-bold'}>
+                                                    {stuVal || '(Unmatched)'}
+                                                  </span>
+                                                </div>
+                                              )}
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Correct match:</span>
+                                                <span className="text-emerald-500 font-bold">{corrVal}</span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {q.type === 'essay' && (
+                                      <div className="flex flex-col gap-2">
+                                        {showComparison && (
+                                          <div className="flex flex-col gap-1 border-b pb-2 border-border/40">
+                                            <span className="font-bold text-muted-foreground">Your submitted essay response:</span>
+                                            <p className="p-3 bg-card border rounded-lg text-foreground/80 text-[11px] leading-relaxed max-h-[140px] overflow-y-auto italic">
+                                              "{stuAns || 'No response submitted.'}"
+                                            </p>
+                                          </div>
+                                        )}
+                                        <div className="flex flex-col gap-1">
+                                          <span className="font-bold text-muted-foreground">Model Answer Guideline:</span>
+                                          <p className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-lg text-foreground/80 text-[11px] leading-relaxed">
+                                            {q.id === 23 
+                                              ? "The response should identify: (1) hypovolemia triggers renal baroreceptors, (2) release of renin from juxtaglomerular cells converts angiotensinogen to Angiotensin I, (3) ACE in pulmonary capillary beds converts Angiotensin I to Angiotensin II, (4) Angiotensin II triggers release of aldosterone and ADH to increase sodium and free-water reabsorption, reducing urine output."
+                                              : "The response must describe: (1) allergen exposure triggers IgE crosslinking on mast cells, (2) degranulation releases histamine/leukotrienes, (3) results in smooth muscle contraction (bronchospasm), bronchial mucosal edema, and mucus hypersecretion, culminating in severe narrowing of airways."
+                                            }
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  </div>
+
+                                  {/* Rationale block */}
+                                  {hasRationale && q.type !== 'essay' && (
+                                    <div className="bg-indigo-500/5 border border-indigo-500/15 p-4 rounded-xl flex items-start gap-2.5 text-xs text-indigo-900 dark:text-indigo-300 leading-normal font-medium">
+                                      <i className="fa-light fa-circle-info text-base mt-0.5 text-indigo-500 shrink-0" />
+                                      <div>
+                                        <strong className="font-bold block mb-1 text-[11px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Answer Explanation &amp; Rationale</strong>
+                                        {rationales[q.id] || "No explanation defined for this item."}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Right Column: Admin Settings Simulator Panel */}
+              {isAdminPanelOpen && (
+                <div className="w-full lg:w-96 shrink-0 lg:sticky lg:top-6 self-start animate-card-enter">
+                  <div className="bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl text-slate-100 flex flex-col gap-5 select-none relative overflow-hidden">
+                  
+                  {/* Decorative Blueprint Lines */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+                  
+                  {/* Title */}
+                  <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
+                    <h3 className="font-bold text-sm text-indigo-400 flex items-center gap-2 uppercase tracking-wider">
+                      <i className="fa-light fa-sliders text-base animate-pulse" />
+                      Admin View Simulator
+                    </h3>
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[9px] font-black tracking-widest uppercase">
+                      Blueprint
+                    </span>
+                  </div>
+
+                  {/* 1. Results Visibility */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 justify-between">
+                      <span>1. Post-Assessment Visibility</span>
+                    </label>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:border-slate-700 transition-colors">
+                      <span className="text-xs font-semibold text-slate-200">Show Results to Student</span>
+                      <input 
+                        type="checkbox"
+                        checked={adminShowResults}
+                        onChange={(e) => setAdminShowResults(e.target.checked)}
+                        className="size-4.5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-600 bg-slate-900 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 2. Results Classification Type */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      2. Results Classification
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'score', label: 'Score' },
+                        { id: 'pass-fail', label: 'Pass/Fail' },
+                        { id: 'hidden', label: 'Hidden' }
+                      ].map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => setAdminResultType(type.id as any)}
+                          disabled={!adminShowResults}
+                          className={`py-2 px-2.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
+                            !adminShowResults 
+                              ? 'opacity-30 cursor-not-allowed border-slate-800 text-slate-600 bg-slate-950/20'
+                              : adminResultType === type.id
+                              ? 'bg-indigo-500 border-transparent text-white shadow-md'
+                              : 'bg-slate-950/30 border-slate-800 text-slate-300 hover:bg-slate-950/50'
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. Section Performance Visibility */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex justify-between">
+                      <span>3. Section Performance Card</span>
+                    </label>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:border-slate-700 transition-colors">
+                      <span className="text-xs font-semibold text-slate-200">Show Section Breakdown</span>
+                      <input 
+                        type="checkbox"
+                        checked={adminShowSectionPerformance}
+                        onChange={(e) => setAdminShowSectionPerformance(e.target.checked)}
+                        className="size-4.5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-600 bg-slate-900 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 4. Subjective Grading Status */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex justify-between">
+                      <span>4. Subjective Grading Status</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'pending', label: 'Pending Evaluation' },
+                        { id: 'complete', label: 'Grading Complete' }
+                      ].map((status) => (
+                        <button
+                          key={status.id}
+                          onClick={() => setAdminGradingStatus(status.id as any)}
+                          disabled={!adminShowResults}
+                          className={`py-2 px-2.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
+                            !adminShowResults
+                              ? 'opacity-30 cursor-not-allowed border-slate-800 text-slate-600 bg-slate-950/20'
+                              : adminGradingStatus === status.id
+                              ? 'bg-indigo-500 border-transparent text-white shadow-md'
+                              : 'bg-slate-950/30 border-slate-800 text-slate-300 hover:bg-slate-950/50'
+                          }`}
+                        >
+                          {status.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 5. Pre-Curving Mode */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      5. Curve Status
+                    </label>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 hover:border-slate-700 transition-colors">
+                      <span className="text-xs font-semibold text-slate-200">Pre-Curving Active</span>
+                      <input 
+                        type="checkbox"
+                        checked={adminPreCurving}
+                        disabled={!adminShowResults}
+                        onChange={(e) => setAdminPreCurving(e.target.checked)}
+                        className={`size-4.5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-600 bg-slate-900 cursor-pointer ${!adminShowResults ? 'opacity-30 cursor-not-allowed' : ''}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 6. Course Rollup slider */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <span>6. Course Weight Contribution</span>
+                      <span className="text-indigo-400 font-bold font-mono">{adminCourseWeight}%</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 flex flex-col gap-2">
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={adminCourseWeight} 
+                        disabled={!adminShowResults || adminGradingStatus === 'pending'}
+                        onChange={(e) => setAdminCourseWeight(parseInt(e.target.value))}
+                        className={`w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 ${(!adminShowResults || adminGradingStatus === 'pending') ? 'opacity-30 cursor-not-allowed' : ''}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 7. Key visibility */}
+                  <div className="flex flex-col gap-3 border-t border-slate-800 pt-4">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        7. Answer Key Visibility
+                      </label>
+                      <input 
+                        type="checkbox"
+                        checked={adminKeyVisibility}
+                        onChange={(e) => setAdminKeyVisibility(e.target.checked)}
+                        className="size-4.5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-600 bg-slate-900 cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Key Display Option</span>
+                      <div className="flex flex-col gap-1.5">
+                        {[
+                          { id: 'answers-only', label: 'Correct Answers Only + Download' },
+                          { id: 'match', label: 'Correct Options + Student Choices' },
+                          { id: 'match-rationale', label: 'Options + Choices + Rationales' },
+                          { id: 'rationale-only', label: 'Correct Answers + Rationales Only' }
+                        ].map((opt) => (
+                          <label 
+                            key={opt.id} 
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-left cursor-pointer transition-all ${
+                              !adminKeyVisibility 
+                                ? 'opacity-30 cursor-not-allowed border-slate-800/40 text-slate-600 bg-transparent'
+                                : adminKeyType === opt.id
+                                ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 font-bold'
+                                : 'bg-slate-950/20 border-slate-800 text-slate-400 hover:border-slate-700/60'
+                            }`}
+                          >
+                            <input 
+                              type="radio"
+                              name="keyTypeRadio"
+                              disabled={!adminKeyVisibility}
+                              checked={adminKeyType === opt.id}
+                              onChange={() => setAdminKeyType(opt.id as any)}
+                              className="size-3.5 text-indigo-500 border-slate-700 bg-slate-900 focus:ring-indigo-600"
+                            />
+                            <span className="text-[10px] leading-tight">{opt.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 8. Section Level Results Visibility */}
+                  <div className="flex flex-col gap-2.5 border-t border-slate-800 pt-4">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      8. Section Visibility Locks
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-300">
+                      {[1, 2, 3, 4, 5, 6].map((secId) => (
+                        <label 
+                          key={secId} 
+                          className={`flex items-center gap-2 p-2 rounded-lg bg-slate-950/30 border border-slate-850 hover:border-slate-750 transition-colors cursor-pointer ${(!adminShowResults || !adminShowSectionPerformance) ? 'opacity-30 cursor-not-allowed' : ''}`}
+                        >
+                          <input 
+                            type="checkbox"
+                            checked={adminSectionVisibility[secId]}
+                            disabled={!adminShowResults || !adminShowSectionPerformance}
+                            onChange={(e) => {
+                              setAdminSectionVisibility(prev => ({
+                                ...prev,
+                                [secId]: e.target.checked
+                              }));
+                            }}
+                            className="size-3.5 rounded border-slate-700 text-indigo-500 focus:ring-indigo-600 bg-slate-900 cursor-pointer"
+                          />
+                          <span>Section {secId}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* QUESTION NAVIGATOR SIDEBAR */}
       {isNavigatorOpen && (
@@ -1418,6 +2525,7 @@ export default function ExamTakePage() {
               </button>
               <button
                 onClick={() => {
+                  fillMockAnswers();
                   setIsSubmitModalOpen(false);
                   setPhase('submitted');
                 }}

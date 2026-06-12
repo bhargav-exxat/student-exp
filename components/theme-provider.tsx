@@ -55,6 +55,10 @@ function ThemeHotkey() {
         return
       }
 
+      if (window.location.pathname.includes("/exam/")) {
+        return
+      }
+
       setTheme(resolvedTheme === "dark" ? "light" : "dark")
     }
 
