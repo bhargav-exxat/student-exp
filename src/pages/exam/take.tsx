@@ -965,59 +965,63 @@ export default function ExamTakePage() {
         <div className="flex-1 flex items-center justify-center p-6 bg-background h-full overflow-hidden relative">
           
           {/* Left Sidebar: Section Navigation */}
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-card flex flex-col p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 px-2 flex items-center gap-2">
-              <i className="fa-solid fa-list-check text-[var(--exam-accent)]" />
-              Exam Sections
-            </h3>
-            <div className="flex flex-col gap-1.5">
-              {[1, 2, 3, 4, 5, 6].map((secId) => {
-                const secDetails = getSectionDetails(secId);
-                const isCurrent = targetSectionId === secId;
-                const sectionQuestions = questions.filter((q) => q.sectionId === secId);
-                const totalCount = sectionQuestions.length;
-                const answeredCount = sectionQuestions.filter(isQuestionAnswered).length;
-                const unansweredCount = totalCount - answeredCount;
-                const flaggedCount = sectionQuestions.filter((q) => bookmarks.has(q.id)).length;
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-card flex flex-col justify-center p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
+            <div className="w-full flex flex-col my-auto">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 px-2 flex items-center gap-2">
+                <i className="fa-solid fa-list-check text-[var(--exam-accent)]" />
+                Exam Sections
+              </h3>
+              <div className="flex flex-col gap-1.5">
+                {[1, 2, 3, 4, 5, 6].map((secId, index) => {
+                  const secDetails = getSectionDetails(secId);
+                  const isCurrent = targetSectionId === secId;
+                  const sectionQuestions = questions.filter((q) => q.sectionId === secId);
+                  const totalCount = sectionQuestions.length;
+                  const answeredCount = sectionQuestions.filter(isQuestionAnswered).length;
+                  const unansweredCount = totalCount - answeredCount;
+                  const flaggedCount = sectionQuestions.filter((q) => bookmarks.has(q.id)).length;
 
-                return (
-                  <button
-                    key={secId}
-                    onClick={() => {
-                      setTargetSectionId(secId);
-                    }}
-                    className={`text-left p-3.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border ${
-                      isCurrent
-                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent-border)] text-[var(--exam-accent)] shadow-xs"
-                        : "border-transparent bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <div className="flex flex-col gap-1 w-full">
-                      <span className={`text-xs font-extrabold truncate leading-tight ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>
-                        Section {secId}: {secDetails.name}
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5 mt-1 pt-1.5 border-t border-border/40 text-[10px]">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Total</span>
-                          <span className={`font-extrabold text-xs ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>{totalCount}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Unanswered</span>
-                          <span className={`font-extrabold text-xs ${unansweredCount > 0 ? "text-amber-600 dark:text-amber-400 font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
-                            {unansweredCount}
+                  return (
+                    <React.Fragment key={secId}>
+                      {index > 0 && <div className="h-px bg-border/50 my-1.5 mx-2" />}
+                      <button
+                        onClick={() => {
+                          setTargetSectionId(secId);
+                        }}
+                        className={`text-left p-3.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border ${
+                          isCurrent
+                            ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent-border)] text-[var(--exam-accent)] shadow-xs"
+                            : "border-transparent bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-1 w-full">
+                          <span className={`text-xs font-extrabold truncate leading-tight ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>
+                            {secId}: {secDetails.name}
                           </span>
+                          <div className="grid grid-cols-3 gap-1.5 mt-1 pt-1.5 border-t border-border/40 text-[10px]">
+                            <div className="flex flex-col items-center text-center">
+                              <span className="text-[9px] font-medium text-muted-foreground">Total</span>
+                              <span className={`font-extrabold text-xs ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>{totalCount}</span>
+                            </div>
+                            <div className="flex flex-col items-center text-center">
+                              <span className="text-[9px] font-medium text-muted-foreground">Unanswered</span>
+                              <span className={`font-extrabold text-xs ${unansweredCount > 0 ? "text-amber-600 dark:text-amber-400 font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
+                                {unansweredCount}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-center text-center">
+                              <span className="text-[9px] font-medium text-muted-foreground">Flagged</span>
+                              <span className={`font-extrabold text-xs ${flaggedCount > 0 ? "text-[var(--state-flagged-text)] font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
+                                {flaggedCount}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider font-bold">Flagged</span>
-                          <span className={`font-extrabold text-xs ${flaggedCount > 0 ? "text-[var(--state-flagged-text)] font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
-                            {flaggedCount}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
