@@ -49,6 +49,8 @@ export default function ExamTakePage() {
   const [theme, setThemeState] = React.useState<'light' | 'dark' | 'contrast'>('light');
   const [fontSizePercent, setFontSizePercent] = React.useState<number>(100);
   const [colorFilter, setColorFilter] = React.useState<'none' | 'protanopia' | 'deuteranopia' | 'tritanopia'>('none');
+  const [highlights, setHighlights] = React.useState<Record<number, Array<{ text: string; color: string }>>>({});
+  const [highlighterColor, setHighlighterColor] = React.useState<'yellow' | 'blue' | 'pink' | 'green' | null>(null);
 
   // Tab sync state to detect duplicate tabs running the same exam
   const [isDuplicateTab, setIsDuplicateTab] = React.useState(false);
@@ -339,6 +341,13 @@ export default function ExamTakePage() {
         return;
       }
 
+      // 1b. Begin section via Enter/Return
+      if (phase === 'section-intro' && (e.key === 'Enter' || e.key === 'Return' || e.code === 'Enter' || e.code === 'NumpadEnter')) {
+        e.preventDefault();
+        handleBeginSection();
+        return;
+      }
+
       // If the exam is not in active phase, don't trigger exam-related shortcuts
       if (phase !== 'exam') return;
 
@@ -495,7 +504,7 @@ export default function ExamTakePage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [phase, currentQuestionIndex, answers, crossedOut, bookmarks, showCalculator]);
+  }, [phase, currentQuestionIndex, answers, crossedOut, bookmarks, showCalculator, targetSectionId, highlighterColor]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -625,6 +634,53 @@ export default function ExamTakePage() {
       return keys.length === (q.matches?.length || 0) && keys.every(k => ans[k] !== "");
     }
     return ans !== "";
+  };
+
+  const isQuestionPartiallyAnswered = (q: Question) => {
+    const ans = answers[q.id];
+    if (ans === undefined || ans === null) return false;
+    if (q.type === 'fill-blank') {
+      const keys = Object.keys(ans);
+      const answeredCount = keys.filter(k => ans[k] !== "").length;
+      return answeredCount > 0 && answeredCount < keys.length;
+    }
+    if (q.type === 'match') {
+      const keys = Object.keys(ans);
+      const answeredCount = keys.filter(k => ans[k] !== "").length;
+      const totalCount = q.matches?.length || 0;
+      return answeredCount > 0 && answeredCount < totalCount;
+    }
+    return false;
+  };
+
+  const getHighlightColorCode = (color: string | null) => {
+    switch (color) {
+      case 'yellow': return '#fef08a';
+      case 'blue': return '#bfdbfe';
+      case 'pink': return '#fbcfe8';
+      case 'green': return '#bbf7d0';
+      default: return 'transparent';
+    }
+  };
+
+  const handleTextHighlight = () => {
+    if (!highlighterColor) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const selectionText = selection.toString();
+    if (!selectionText || selectionText.trim().length === 0) return;
+
+    setHighlights((prev) => {
+      const currentList = prev[currentQuestion.id] || [];
+      if (currentList.some((h) => h.text === selectionText && h.color === highlighterColor)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [currentQuestion.id]: [...currentList, { text: selectionText, color: highlighterColor }]
+      };
+    });
+    selection.removeAllRanges();
   };
 
   const getAnsweredCount = () => {
@@ -1180,6 +1236,25 @@ export default function ExamTakePage() {
                   <span className="hidden lg:inline">Flag</span>
                 </button>
 
+                {/* HIGHLIGHTER CTA */}
+                <button
+                  onClick={() => {
+                    setHighlighterColor((prev) => (prev ? null : 'yellow'));
+                  }}
+                  className={`flex items-center gap-1.5 px-3 h-9 rounded-lg border font-semibold text-xs cursor-pointer transition-all ${
+                    highlighterColor
+                      ? "bg-amber-100 dark:bg-amber-950/40 border-amber-300 text-amber-800 dark:text-amber-300 shadow-xs"
+                      : "bg-background border-border text-foreground hover:bg-muted"
+                  }`}
+                  title="Highlighter Tool"
+                >
+                  <i className="fa-solid fa-highlighter" />
+                  <span className="hidden sm:inline">Highlight</span>
+                  {highlighterColor && (
+                    <span className="size-2 rounded-full animate-pulse" style={{ backgroundColor: getHighlightColorCode(highlighterColor) }} />
+                  )}
+                </button>
+
                 {/* QUESTIONS DRAWER TRIGGER */}
                 <button
                   onClick={() => setIsNavigatorOpen(true)}
@@ -1189,13 +1264,13 @@ export default function ExamTakePage() {
                   <span className="hidden sm:inline">Questions</span>
                 </button>
 
-                {/* ACCESSIBILITY GEAR */}
+                {/* TOOLS MODAL TRIGGER */}
                 <button
                   onClick={() => setIsSettingsOpen(true)}
                   className="flex items-center justify-center border border-border bg-background hover:bg-muted rounded-lg size-9 cursor-pointer text-muted-foreground hover:text-foreground"
-                  title="Accessibility Settings"
+                  title="Tools"
                 >
-                  <i className="fa-light fa-gear" style={{ fontSize: "18px" }} />
+                  <i className="fa-light fa-toolbox" style={{ fontSize: "18px" }} />
                 </button>
               </div>
             </div>
@@ -1219,7 +1294,11 @@ export default function ExamTakePage() {
           </header>
 
           {/* QUESTION PANEL */}
-          <div className="flex-1 overflow-hidden flex flex-col bg-background p-6">
+          <div 
+            id="question-content-container"
+            onMouseUp={handleTextHighlight}
+            className="flex-1 overflow-hidden flex flex-col bg-background p-6"
+          >
             <QuestionRenderer
               question={currentQuestion}
               questionNumber={currentQuestionIndex + 1}
@@ -1227,6 +1306,7 @@ export default function ExamTakePage() {
               onAnswerChange={handleAnswerChange}
               crossedOut={crossedOut}
               onToggleCrossOut={handleToggleCrossOut}
+              highlights={highlights}
             />
           </div>
 
@@ -2311,6 +2391,7 @@ export default function ExamTakePage() {
                 {questions.map((q, idx) => {
                   const isCurrent = idx === currentQuestionIndex;
                   const isAnswered = isQuestionAnswered(q);
+                  const isPartiallyAnswered = isQuestionPartiallyAnswered(q);
                   const isFlagged = bookmarks.has(q.id);
                   
                   return (
@@ -2322,9 +2403,13 @@ export default function ExamTakePage() {
                       }}
                       className={`relative w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
                         isCurrent
-                          ? "border-2 border-[var(--exam-accent)] text-[var(--exam-accent)] shadow-sm bg-transparent"
-                          : isAnswered
+                          ? "ring-2 ring-[var(--exam-accent)] ring-offset-2 dark:ring-offset-background"
+                          : ""
+                      } ${
+                        isAnswered
                           ? "bg-[var(--state-answered-bg)] border border-[var(--state-answered-border)] text-[var(--state-answered-text)]"
+                          : isPartiallyAnswered
+                          ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-400"
                           : "bg-muted border border-border text-muted-foreground hover:bg-muted/70"
                       }`}
                     >
@@ -2346,14 +2431,22 @@ export default function ExamTakePage() {
                 <i className="fa-light fa-circle-info" />
                 Status Legend
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-x-2 gap-y-2.5 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-4.5 h-4.5 rounded-full bg-[var(--state-answered-bg)] border border-[var(--state-answered-border)] text-[var(--state-answered-text)] flex items-center justify-center font-bold text-[9px]">✓</span>
                   <span className="text-foreground font-medium text-[11px]">Answered</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <span className="w-4.5 h-4.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold text-[9px]">◒</span>
+                  <span className="text-foreground font-medium text-[11px]">Partially answered</span>
+                </div>
+                <div className="flex items-center gap-2">
                   <span className="w-4.5 h-4.5 rounded-full bg-muted border border-border text-muted-foreground flex items-center justify-center font-bold text-[9px]">•</span>
                   <span className="text-foreground font-medium text-[11px]">Unanswered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-4.5 h-4.5 rounded-full ring-2 ring-[var(--exam-accent)] ring-offset-1 bg-muted border border-border text-muted-foreground flex items-center justify-center font-bold text-[9px]">1</span>
+                  <span className="text-foreground font-medium text-[11px]">Current question</span>
                 </div>
                 <div className="flex items-center gap-2 col-span-2">
                   <span className="relative w-4.5 h-4.5 rounded-full bg-muted border border-border text-muted-foreground flex items-center justify-center font-bold text-[9px]">
@@ -2383,7 +2476,7 @@ export default function ExamTakePage() {
         </div>
       )}
 
-      {/* ACCESSIBILITY / SETTINGS MODAL */}
+      {/* TOOLS MODAL */}
       {isSettingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
           <div
@@ -2391,11 +2484,11 @@ export default function ExamTakePage() {
             className="absolute inset-0 bg-black/40 backdrop-blur-xs"
           ></div>
           
-          <div className="relative max-w-md w-full p-6 bg-card border border-border rounded-2xl shadow-2xl flex flex-col gap-5 animate-card-enter text-left z-10">
+          <div className="relative max-w-md w-full max-h-[85vh] overflow-y-auto p-6 bg-card border border-border rounded-2xl shadow-2xl flex flex-col gap-6 animate-card-enter text-left z-10">
             <div className="flex justify-between items-center border-b pb-3 border-border">
               <h3 className="font-bold text-md text-foreground flex items-center gap-2">
-                <i className="fa-light fa-sliders" />
-                Accessibility Settings
+                <i className="fa-light fa-toolbox text-[var(--exam-accent)]" />
+                Tools
               </h3>
               <button
                 onClick={() => setIsSettingsOpen(false)}
@@ -2405,143 +2498,215 @@ export default function ExamTakePage() {
               </button>
             </div>
 
-            {/* Themes */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Color Theme</label>
-              <div className="grid grid-cols-3 gap-2.5">
-                {(['light', 'dark', 'contrast'] as const).map((t) => (
+            {/* SECTION 1: ACCESSIBILITY */}
+            <div className="flex flex-col gap-4">
+              <div className="pb-1 border-b border-border/40">
+                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--exam-accent)]">Accessibility</h4>
+              </div>
+
+              {/* Themes */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Color Theme</label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {(['light', 'dark', 'contrast'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTheme(t)}
+                      className={`py-2 px-3 rounded-lg border font-semibold text-xs capitalize cursor-pointer transition-all ${
+                        theme === t
+                          ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
+                          : "bg-background border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Font Size Stepper */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Text Size</label>
+                  <span className="text-xs font-bold text-[var(--exam-accent)]">{fontSizePercent}%</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
-                    key={t}
-                    onClick={() => setTheme(t)}
-                    className={`py-2 px-3 rounded-lg border font-semibold text-xs capitalize cursor-pointer transition-all ${
-                      theme === t
-                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
-                        : "bg-background border-border text-muted-foreground hover:bg-muted"
-                    }`}
+                    type="button"
+                    disabled={fontSizePercent <= 100}
+                    onClick={() => setFontSizePercent(prev => Math.max(100, prev - 50))}
+                    className="py-2 px-3 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
                   >
-                    {t}
+                    <i className="fa-solid fa-minus" /> Decrease (50%)
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Font Size Stepper */}
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Text Size</label>
-                <span className="text-xs font-bold text-[var(--exam-accent)]">{fontSizePercent}%</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  disabled={fontSizePercent <= 100}
-                  onClick={() => setFontSizePercent(prev => Math.max(100, prev - 50))}
-                  className="py-2 px-3 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                >
-                  <i className="fa-solid fa-minus" /> Decrease (50%)
-                </button>
-                <button
-                  type="button"
-                  disabled={fontSizePercent >= 200}
-                  onClick={() => setFontSizePercent(prev => Math.min(200, prev + 50))}
-                  className="py-2 px-3 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                >
-                  <i className="fa-solid fa-plus" /> Increase (50%)
-                </button>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-normal">
-                WCAG compliance: Increase/decrease text size (up to 200%, with a stepper of 50%).
-              </p>
-            </div>
-
-            {/* Color Filters */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colorblindness Filter</label>
-              <div className="grid grid-cols-2 gap-2.5">
-                {(['none', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((f) => (
                   <button
-                    key={f}
-                    onClick={() => setColorFilter(f)}
-                    className={`py-2 px-3 rounded-lg border font-semibold text-xs capitalize cursor-pointer transition-all ${
-                      colorFilter === f
-                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
-                        : "bg-background border-border text-muted-foreground hover:bg-muted"
-                    }`}
+                    type="button"
+                    disabled={fontSizePercent >= 200}
+                    onClick={() => setFontSizePercent(prev => Math.min(200, prev + 50))}
+                    className="py-2 px-3 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
                   >
-                    {f === 'none' ? 'None' : f}
+                    <i className="fa-solid fa-plus" /> Increase (50%)
                   </button>
-                ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-normal">
+                  WCAG compliance: Increase/decrease text size (up to 200%, with a stepper of 50%).
+                </p>
               </div>
-            </div>
 
-            {/* Keyboard Shortcuts */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Keyboard Shortcuts</label>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSettingsOpen(false);
-                  setIsShortcutsOpen(true);
-                }}
-                className="w-full py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all bg-background border-border text-foreground hover:bg-muted flex items-center justify-between"
-              >
-                <span className="flex items-center gap-1.5">
-                  <i className="fa-light fa-keyboard text-muted-foreground" />
-                  View Keyboard Shortcuts
-                </span>
-                <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-[10px] font-mono font-bold text-muted-foreground">
-                  {isMac ? '⌘ + /' : 'Ctrl + /'}
-                </kbd>
-              </button>
-            </div>
+              {/* Color Filters */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colorblindness Filter</label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {(['none', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setColorFilter(f)}
+                      className={`py-2 px-3 rounded-lg border font-semibold text-xs capitalize cursor-pointer transition-all ${
+                        colorFilter === f
+                          ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
+                          : "bg-background border-border text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {f === 'none' ? 'None' : f}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            {/* Help Request */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Help & Support</label>
-              {!isHelpFormOpen ? (
+              {/* Keyboard Shortcuts */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Keyboard Shortcuts</label>
                 <button
                   type="button"
-                  onClick={() => setIsHelpFormOpen(true)}
+                  onClick={() => {
+                    setIsSettingsOpen(false);
+                    setIsShortcutsOpen(true);
+                  }}
                   className="w-full py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all bg-background border-border text-foreground hover:bg-muted flex items-center justify-between"
                 >
                   <span className="flex items-center gap-1.5">
-                    <i className="fa-light fa-circle-question text-muted-foreground" />
-                    Submit Help Request
+                    <i className="fa-light fa-keyboard text-muted-foreground" />
+                    View Keyboard Shortcuts
                   </span>
-                  <i className="fa-solid fa-chevron-right text-muted-foreground text-[10px]" />
+                  <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-[10px] font-mono font-bold text-muted-foreground">
+                    {isMac ? '⌘ + /' : 'Ctrl + /'}
+                  </kbd>
                 </button>
-              ) : (
-                <div className="flex flex-col gap-2 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
-                  <span className="text-xs font-bold text-foreground">Describe your issue:</span>
-                  <textarea
-                    value={helpComment}
-                    onChange={(e) => setHelpComment(e.target.value)}
-                    placeholder="Describe what you need help with..."
-                    rows={3}
-                    className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsHelpFormOpen(false);
-                        setHelpComment("");
-                      }}
-                      className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleHelpSubmit}
-                      disabled={!helpComment.trim()}
-                      className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
-                    >
-                      Submit
-                    </button>
-                  </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: OTHERS */}
+            <div className="flex flex-col gap-4 border-t pt-4 border-border">
+              <div className="pb-1 border-b border-border/40">
+                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--exam-accent)]">Others</h4>
+              </div>
+
+              {/* Highlighter Tool */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Highlighter Tool</label>
+                  <span className="text-xs font-bold text-[var(--exam-accent)] capitalize">
+                    {highlighterColor ? `${highlighterColor} Active` : 'Disabled'}
+                  </span>
                 </div>
-              )}
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setHighlighterColor(prev => prev ? null : 'yellow')}
+                    className={`py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all ${
+                      highlighterColor
+                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
+                        : "bg-background border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {highlighterColor ? 'Disable' : 'Enable'}
+                  </button>
+
+                  <div className="flex gap-2">
+                    {(['yellow', 'blue', 'pink', 'green'] as const).map((color) => {
+                      const colorBg = {
+                        yellow: 'bg-yellow-200 dark:bg-yellow-500/40 border-yellow-400',
+                        blue: 'bg-blue-200 dark:bg-blue-500/40 border-blue-400',
+                        pink: 'bg-pink-200 dark:bg-pink-500/40 border-pink-400',
+                        green: 'bg-green-200 dark:bg-green-500/40 border-green-400'
+                      }[color];
+                      
+                      const isSelected = highlighterColor === color;
+
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setHighlighterColor(color)}
+                          className={`size-7 rounded-full border-2 transition-all cursor-pointer ${colorBg} ${
+                            isSelected ? 'ring-2 ring-foreground scale-110' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'
+                          }`}
+                          title={`Highlight with ${color}`}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {(highlights[currentQuestion.id] && highlights[currentQuestion.id].length > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => setHighlights(prev => ({ ...prev, [currentQuestion.id]: [] }))}
+                      className="py-1.5 px-2.5 rounded-lg border border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/10 text-[10px] font-bold cursor-pointer transition-all"
+                    >
+                      Clear highlights
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Help Request */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Help & Support</label>
+                {!isHelpFormOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsHelpFormOpen(true)}
+                    className="w-full py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all bg-background border-border text-foreground hover:bg-muted flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <i className="fa-light fa-circle-question text-muted-foreground" />
+                      Submit Help Request
+                    </span>
+                    <i className="fa-solid fa-chevron-right text-muted-foreground text-[10px]" />
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
+                    <span className="text-xs font-bold text-foreground">Describe your issue:</span>
+                    <textarea
+                      value={helpComment}
+                      onChange={(e) => setHelpComment(e.target.value)}
+                      placeholder="Describe what you need help with..."
+                      rows={3}
+                      className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsHelpFormOpen(false);
+                          setHelpComment("");
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleHelpSubmit}
+                        disabled={!helpComment.trim()}
+                        className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button

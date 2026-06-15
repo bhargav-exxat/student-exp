@@ -8,7 +8,18 @@ interface QuestionRendererProps {
   onAnswerChange: (questionId: number, answer: any) => void;
   crossedOut: Record<number, string[]>; // Key: question.id, Value: list of crossed out option letters
   onToggleCrossOut: (questionId: number, optionLetter: string) => void;
+  highlights?: Record<number, Array<{ text: string; color: string }>>;
 }
+
+const getHighlightColorCode = (color: string) => {
+  switch (color) {
+    case 'yellow': return '#fef08a';
+    case 'blue': return '#bfdbfe';
+    case 'pink': return '#fbcfe8';
+    case 'green': return '#bbf7d0';
+    default: return 'transparent';
+  }
+};
 
 export function QuestionRenderer({
   question,
@@ -17,6 +28,7 @@ export function QuestionRenderer({
   onAnswerChange,
   crossedOut,
   onToggleCrossOut,
+  highlights,
 }: QuestionRendererProps) {
   const currentAnswer = answers[question.id];
   const currentCrossedOut = crossedOut[question.id] || [];
@@ -32,6 +44,23 @@ export function QuestionRenderer({
     setActiveTab(0);
     setIsDictating(false);
   }, [question.id]);
+
+  const renderHighlightedText = (text: string) => {
+    if (!text) return "";
+    const questionHighlights = highlights ? (highlights[question.id] || []) : [];
+    if (questionHighlights.length === 0) {
+      return text;
+    }
+    let html = text;
+    const sortedHighlights = [...questionHighlights].sort((a, b) => b.text.length - a.text.length);
+    for (const hl of sortedHighlights) {
+      if (!hl.text.trim()) continue;
+      const escaped = hl.text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`(${escaped})`, 'gi');
+      html = html.replace(regex, `<mark class="rounded-xs px-0.5" style="background-color: ${getHighlightColorCode(hl.color)}; color: inherit;">$1</mark>`);
+    }
+    return <span dangerouslySetInnerHTML={{ __html: html }} />;
+  };
 
   // Trigger KaTeX auto-render to parse LaTeX formulas
   React.useEffect(() => {
@@ -618,7 +647,7 @@ export function QuestionRenderer({
                 {questionNumber || question.id}.
               </span>
               <h2 className="text-[1.125em] font-semibold leading-relaxed flex-1 text-foreground">
-                {question.text}
+                {renderHighlightedText(question.text)}
               </h2>
             </div>
 
