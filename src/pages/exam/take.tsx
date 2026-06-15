@@ -91,7 +91,8 @@ export default function ExamTakePage() {
     13: 'C',
     14: 'B',
     15: 'A',
-    16: 'Non-urgent (Level 4/5)',
+    16: 'D',
+    28: 'D',
     17: ['A', 'C', 'E'],
     18: ['C'],
     19: ['A', 'C', 'D'],
@@ -123,6 +124,7 @@ export default function ExamTakePage() {
     14: "An irregularly irregular rhythm with absent P-waves is characteristic of atrial fibrillation.",
     15: "The absence of lung markings in the periphery of the hemithorax on the chest X-ray indicates a pneumothorax.",
     16: "Stable vitals and a sprained ankle represent a non-urgent triage case (Level 4/5).",
+    28: "Stable vitals and a sprained ankle represent a non-urgent triage case (Level 4/5).",
     17: "Metoprolol, Atenolol, and Propranolol are beta-adrenergic antagonists (beta-blockers). Lisinopril is an ACE inhibitor and Amlodipine is a calcium channel blocker.",
     18: "Hyperthyroidism increases metabolic rates and stimulates the cardiovascular system, causing tachycardia (fast heart rate) and palpitations. Bradycardia is a classic symptom of hypothyroidism.",
     19: "ACE inhibitors inhibit angiotensin-converting enzyme, leading to accumulation of bradykinin (causing dry cough) and reduced aldosterone secretion (leading to potassium retention and hyperkalemia), and can cause life-threatening angioedema.",
@@ -1143,8 +1145,9 @@ export default function ExamTakePage() {
         const objCorrect = questions.filter(q => q.type !== 'essay' && isQuestionCorrect(q)).length;
         const subjectiveScore = adminGradingStatus === 'complete' ? 1.8 : 0;
         const totalPointsEarned = objCorrect + subjectiveScore;
-        const totalMaxPoints = 27;
-        const objectiveMaxPoints = 25;
+        const objectiveMaxPoints = questions.filter(q => q.type !== 'essay').length;
+        const subjectiveMaxPoints = 2.0; // Essay section has 2 questions with total 2.0 pts
+        const totalMaxPoints = objectiveMaxPoints + subjectiveMaxPoints;
         
         const rawObjectivePercent = (objCorrect / objectiveMaxPoints) * 100;
         const finalOverallPercent = (totalPointsEarned / totalMaxPoints) * 100;
@@ -1675,7 +1678,16 @@ export default function ExamTakePage() {
                                               }`}>
                                                 {opt.letter}
                                               </span>
-                                              <span className="text-foreground font-medium">{opt.text}</span>
+                                              <div className="flex flex-col items-start gap-1">
+                                                <span className="text-foreground font-medium">{opt.text}</span>
+                                                {opt.image && (
+                                                  <img 
+                                                    src={opt.image} 
+                                                    alt={`Option ${opt.letter}`} 
+                                                    className="max-h-[80px] max-w-full rounded border border-border/40 bg-muted/10 object-contain mt-0.5"
+                                                  />
+                                                )}
+                                              </div>
                                               {badge}
                                             </div>
                                           );
@@ -1707,7 +1719,16 @@ export default function ExamTakePage() {
                                               }`}>
                                                 {opt.letter}
                                               </span>
-                                              <span className="text-foreground font-medium">{opt.text}</span>
+                                              <div className="flex flex-col items-start gap-1">
+                                                <span className="text-foreground font-medium">{opt.text}</span>
+                                                {opt.image && (
+                                                  <img 
+                                                    src={opt.image} 
+                                                    alt={`Option ${opt.letter}`} 
+                                                    className="max-h-[80px] max-w-full rounded border border-border/40 bg-muted/10 object-contain mt-0.5"
+                                                  />
+                                                )}
+                                              </div>
                                               {badge}
                                             </div>
                                           );

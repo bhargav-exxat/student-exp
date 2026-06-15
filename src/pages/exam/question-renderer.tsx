@@ -259,9 +259,18 @@ export function QuestionRenderer({
                           : "bg-muted text-muted-foreground border-border"
                       }`}
                     >
-                      {opt.letter}
+                    <span className="text-[12px] font-bold text-foreground leading-none">{opt.letter}</span>
                     </span>
-                    <span className="text-[1em] flex-1 text-foreground">{opt.text}</span>
+                    <div className="flex-grow flex flex-col items-start gap-1 py-1">
+                      <span className="text-[1em] text-foreground font-semibold text-left leading-snug">{opt.text}</span>
+                      {opt.image && (
+                        <img 
+                          src={opt.image} 
+                          alt={`Option ${opt.letter}`} 
+                          className="max-h-[140px] max-w-full rounded-lg border border-border/60 bg-muted/20 object-contain mt-1"
+                        />
+                      )}
+                    </div>
                   </button>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
                     <button
@@ -320,9 +329,18 @@ export function QuestionRenderer({
                           : "bg-muted text-muted-foreground border-border"
                       }`}
                     >
-                      {opt.letter}
+                    <span className="text-[12px] font-bold text-foreground leading-none">{opt.letter}</span>
                     </span>
-                    <span className="text-[1em] flex-1 text-foreground">{opt.text}</span>
+                    <div className="flex-grow flex flex-col items-start gap-1 py-1">
+                      <span className="text-[1em] text-foreground font-semibold text-left leading-snug">{opt.text}</span>
+                      {opt.image && (
+                        <img 
+                          src={opt.image} 
+                          alt={`Option ${opt.letter}`} 
+                          className="max-h-[140px] max-w-full rounded-lg border border-border/60 bg-muted/20 object-contain mt-1"
+                        />
+                      )}
+                    </div>
                   </button>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
                     <button

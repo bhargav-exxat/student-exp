@@ -1,6 +1,7 @@
 export interface QuestionOption {
   letter: string;
   text: string;
+  image?: string;
 }
 
 export interface QuestionBlank {
@@ -453,10 +454,10 @@ export const questionsData: Question[] = [
     type: "mcq-single",
     text: "Identify the abnormality in the provided chest X-ray.",
     options: [
-      { letter: "A", text: "Pneumothorax" },
-      { letter: "B", text: "Pleural effusion" },
-      { letter: "C", text: "Normal anatomy" },
-      { letter: "D", text: "Cardiomegaly" }
+      { letter: "A", text: "Pneumothorax", image: "https://images.unsplash.com/photo-1618944913480-b67ee16d7b77?w=400&q=80" },
+      { letter: "B", text: "Pleural effusion", image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=80" },
+      { letter: "C", text: "Normal anatomy", image: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=400&q=80" },
+      { letter: "D", text: "Cardiomegaly", image: "https://images.unsplash.com/photo-1584515901387-a7a1a7f153b4?w=400&q=80" }
     ],
     attachments: [
       {
@@ -472,13 +473,29 @@ export const questionsData: Question[] = [
     sectionId: 1,
     sectionName: "Nervous System",
     sectionTitle: "Section 1 of 6",
-    type: "dropdown",
+    type: "mcq-single",
     text: "Select the appropriate triage category for a patient with a sprained ankle and stable vitals.",
     options: [
       { letter: "A", text: "Resuscitation (Level 1)" },
       { letter: "B", text: "Emergent (Level 2)" },
       { letter: "C", text: "Urgent (Level 3)" },
       { letter: "D", text: "Non-urgent (Level 4/5)" }
+    ],
+    attachments: null
+  },
+  {
+    id: 28,
+    originalId: 30,
+    sectionId: 1,
+    sectionName: "Nervous System",
+    sectionTitle: "Section 1 of 6",
+    type: "mcq-single",
+    text: "Select the appropriate triage category for a patient with a sprained ankle and stable vitals. (Visual Reference Guide)",
+    options: [
+      { letter: "A", text: "Resuscitation (Level 1)", image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&q=80" },
+      { letter: "B", text: "Emergent (Level 2)", image: "https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?w=400&q=80" },
+      { letter: "C", text: "Urgent (Level 3)", image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&q=80" },
+      { letter: "D", text: "Non-urgent (Level 4/5)", image: "https://images.unsplash.com/photo-1530026405186-ed1ea0ac7a63?w=400&q=80" }
     ],
     attachments: null
   },
