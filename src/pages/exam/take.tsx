@@ -831,9 +831,8 @@ export default function ExamTakePage() {
 
                 {/* Faculty Instructions */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-bold text-foreground text-sm">Faculty Instructions</h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--exam-accent-light)] text-[var(--exam-accent)] border border-[var(--exam-accent-border)] uppercase tracking-wider">From your instructor</span>
+                  <div className="mb-2">
+                    <h3 className="font-bold text-foreground text-sm">Faculty notes</h3>
                   </div>
                   <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto">
                     <p>Covers Chapters 12–18. Closed book. No reference materials. A proctor password will be provided at exam time.</p>
@@ -849,9 +848,8 @@ export default function ExamTakePage() {
 
                 {/* Instructions */}
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-bold text-foreground text-sm">Instructions</h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">Academic Integrity</span>
+                  <div className="mb-2">
+                    <h3 className="font-bold text-foreground text-sm">Exam instructions</h3>
                   </div>
                   <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto font-medium">
                     <p>By taking this assessment, you agree to complete all questions independently without the assistance of any unauthorized resources, other students, or external parties. You understand that any form of academic dishonesty may result in a failing grade, academic probation, or dismissal from the program in accordance with your institution's code of conduct.</p>
@@ -873,8 +871,8 @@ export default function ExamTakePage() {
                     <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Time</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-base font-bold text-foreground">75%</span>
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Pass</span>
+                    <span className="text-base font-bold text-foreground">{Array.from(new Set(questions.map(q => q.sectionId))).length}</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Sections</span>
                   </div>
                 </div>
 
