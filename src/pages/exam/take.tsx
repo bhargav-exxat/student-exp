@@ -962,39 +962,83 @@ export default function ExamTakePage() {
 
       {/* PHASE 2: SECTION INTRO */}
       {phase === 'section-intro' && (
-        <div className="flex-1 flex items-center justify-center p-6 bg-background">
-          <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Section {targetSectionId} of 6
-              </p>
-              <div className="w-16 h-16 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-[var(--exam-accent)]">
-                <i className="fa-light fa-layer-group" style={{ fontSize: "28px" }} />
-              </div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
-                {activeSectionInfo.name}
-              </h2>
-              <p className="text-sm text-muted-foreground font-semibold">
-                Contains {activeSectionInfo.count} questions
-              </p>
+        <div className="flex-1 flex flex-row bg-background h-full overflow-hidden relative">
+          
+          {/* Left Sidebar: Section Navigation */}
+          <div className="w-72 border-r border-border bg-card flex flex-col p-4 shrink-0 overflow-y-auto hidden md:flex">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 px-2 flex items-center gap-2">
+              <i className="fa-solid fa-list-check text-[var(--exam-accent)]" />
+              Exam Sections
+            </h3>
+            <div className="flex flex-col gap-1.5">
+              {[1, 2, 3, 4, 5, 6].map((secId) => {
+                const secDetails = getSectionDetails(secId);
+                const isCurrent = targetSectionId === secId;
+                return (
+                  <button
+                    key={secId}
+                    onClick={() => {
+                      setTargetSectionId(secId);
+                    }}
+                    className={`text-left p-3.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border ${
+                      isCurrent
+                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent-border)] text-[var(--exam-accent)] shadow-xs"
+                        : "border-transparent bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                        Section {secId} of 6
+                      </span>
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold ${isCurrent ? 'bg-[var(--exam-accent)]/15 text-[var(--exam-accent)]' : 'bg-muted text-muted-foreground'}`}>
+                        {secDetails.count} Qs
+                      </span>
+                    </div>
+                    <span className={`text-xs font-extrabold truncate leading-tight ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>
+                      {secDetails.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-
-            <div className="p-6 bg-card border border-border rounded-2xl text-left shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Section Instructions
-              </h3>
-              <p className="text-sm leading-relaxed text-foreground">
-                {activeSectionInfo.instructions}
-              </p>
-            </div>
-
-            <button
-              onClick={handleBeginSection}
-              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 text-md"
-            >
-              Begin Section {targetSectionId} <i className="fa-light fa-arrow-right" />
-            </button>
           </div>
+
+          {/* Main Area: Centered Section Intro Card */}
+          <div className="flex-grow flex items-center justify-center p-6 md:p-12 overflow-y-auto">
+            <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  Section {targetSectionId} of 6
+                </p>
+                <div className="w-16 h-16 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-[var(--exam-accent)]">
+                  <i className="fa-light fa-layer-group" style={{ fontSize: "28px" }} />
+                </div>
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
+                  {activeSectionInfo.name}
+                </h2>
+                <p className="text-sm text-muted-foreground font-semibold">
+                  Contains {activeSectionInfo.count} questions
+                </p>
+              </div>
+
+              <div className="p-6 bg-card border border-border rounded-2xl text-left shadow-sm">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  Section Instructions
+                </h3>
+                <p className="text-sm leading-relaxed text-foreground">
+                  {activeSectionInfo.instructions}
+                </p>
+              </div>
+
+              <button
+                onClick={handleBeginSection}
+                className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 text-md"
+              >
+                Begin Section {targetSectionId} <i className="fa-light fa-arrow-right" />
+              </button>
+            </div>
+          </div>
+          
         </div>
       )}
 
