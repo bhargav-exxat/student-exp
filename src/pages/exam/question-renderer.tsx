@@ -3,6 +3,7 @@ import { Question, QuestionOption, QuestionAttachment } from "./questions-data";
 
 interface QuestionRendererProps {
   question: Question;
+  questionNumber?: number;
   answers: Record<number, any>; // Key: question.id, Value: answer state
   onAnswerChange: (questionId: number, answer: any) => void;
   crossedOut: Record<number, string[]>; // Key: question.id, Value: list of crossed out option letters
@@ -11,6 +12,7 @@ interface QuestionRendererProps {
 
 export function QuestionRenderer({
   question,
+  questionNumber,
   answers,
   onAnswerChange,
   crossedOut,
@@ -240,7 +242,7 @@ export function QuestionRenderer({
                   <button
                     onClick={() => {
                       if (!isCrossed) {
-                        onAnswerChange(question.id, opt.letter);
+                        onAnswerChange(question.id, isSelected ? "" : opt.letter);
                       }
                     }}
                     disabled={isCrossed}
@@ -371,7 +373,7 @@ export function QuestionRenderer({
               className="w-full p-[1em] rounded-xl border-2 text-[1em] bg-card text-foreground border-border focus:border-[var(--exam-accent)] focus:outline-none"
               aria-label="Select your answer from the dropdown options"
             >
-              <option value="" disabled>Select an option...</option>
+              <option value="">Select an option...</option>
               {options.map((opt) => (
                 <option key={opt.letter} value={opt.text}>{opt.text}</option>
               ))}
@@ -405,7 +407,7 @@ export function QuestionRenderer({
                     style={{ minWidth: "9rem", borderColor: "var(--border)" }}
                     aria-label={`Select the correct term for blank ${index + 1}`}
                   >
-                    <option value="" disabled>Choose...</option>
+                    <option value="">Select an option...</option>
                     {blanks[index].options.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
@@ -483,7 +485,7 @@ export function QuestionRenderer({
                 return (
                   <button
                     key={spot.label}
-                    onClick={() => onAnswerChange(question.id, spot.label)}
+                    onClick={() => onAnswerChange(question.id, isSelected ? "" : spot.label)}
                     className={`absolute rounded-full border-2 transition-all flex items-center justify-center p-0 cursor-pointer ${
                       isSelected
                         ? "bg-[var(--exam-accent)] border-transparent text-white"
@@ -548,7 +550,7 @@ export function QuestionRenderer({
                   aria-label={`Match ${match.label} with the correct option`}
                   title={`Choose match for ${match.label}`}
                 >
-                  <option value="" disabled>Choose a match…</option>
+                  <option value="">Select an option...</option>
                   {allDropdownOptions.map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
@@ -575,7 +577,7 @@ export function QuestionRenderer({
           <div className="p-8 flex flex-col gap-6 flex-1">
             <div className="flex items-start gap-3">
               <span className="font-bold text-[1.2em] text-foreground mt-0.5 shrink-0">
-                {question.id}.
+                {questionNumber || question.id}.
               </span>
               <h2 className="text-[1.125em] font-semibold leading-relaxed flex-1 text-foreground">
                 {question.text}

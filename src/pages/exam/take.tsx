@@ -498,9 +498,33 @@ export default function ExamTakePage() {
   const handleToggleCrossOut = (questionId: number, letter: string) => {
     setCrossedOut((prev) => {
       const current = prev[questionId] || [];
-      const updated = current.includes(letter)
-        ? current.filter(x => x !== letter)
-        : [...current, letter];
+      const isCrossingOut = !current.includes(letter);
+      const updated = isCrossingOut
+        ? [...current, letter]
+        : current.filter(x => x !== letter);
+
+      if (isCrossingOut) {
+        const q = questions.find(x => x.id === questionId);
+        if (q) {
+          if (q.type === 'mcq-single') {
+            setAnswers(prevAns => {
+              if (prevAns[questionId] === letter) {
+                return { ...prevAns, [questionId]: "" };
+              }
+              return prevAns;
+            });
+          } else if (q.type === 'mcq-multiple') {
+            setAnswers(prevAns => {
+              const currentAns = prevAns[questionId];
+              if (Array.isArray(currentAns) && currentAns.includes(letter)) {
+                return { ...prevAns, [questionId]: currentAns.filter(x => x !== letter) };
+              }
+              return prevAns;
+            });
+          }
+        }
+      }
+
       return { ...prev, [questionId]: updated };
     });
   };
@@ -1106,6 +1130,7 @@ export default function ExamTakePage() {
           <div className="flex-1 overflow-hidden flex flex-col bg-background p-6">
             <QuestionRenderer
               question={currentQuestion}
+              questionNumber={currentQuestionIndex + 1}
               answers={answers}
               onAnswerChange={handleAnswerChange}
               crossedOut={crossedOut}
@@ -1578,7 +1603,7 @@ export default function ExamTakePage() {
 
                               return (
                                 <div key={q.id} className="border border-border/80 rounded-xl p-3 bg-muted/20 text-center flex flex-col items-center justify-center min-h-[80px]">
-                                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Q{q.id}</span>
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Q{idx + 1}</span>
                                   <span className={`text-xs font-black mt-1.5 leading-tight ${isSubj ? 'text-amber-500 font-bold' : 'text-foreground font-sans'}`}>
                                     {correctAnsLetter}
                                   </span>
@@ -1613,7 +1638,7 @@ export default function ExamTakePage() {
                                   {/* Header Info */}
                                   <div className="flex justify-between items-center border-b pb-2.5 border-border/60">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-extrabold text-xs text-foreground">QUESTION {q.id}</span>
+                                      <span className="font-extrabold text-xs text-foreground">QUESTION {questions.findIndex(x => x.id === q.id) + 1}</span>
                                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                                         · Section {q.sectionId}
                                       </span>
