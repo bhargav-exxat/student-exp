@@ -807,7 +807,7 @@ export default function ExamTakePage() {
                     Anatomy &amp; Physiology — Midterm Exam
                   </h1>
                   <span className="text-xs text-muted-foreground truncate font-medium">
-                    BIO-301-A
+                    BIO-301-A · AY 2025-2026 · Spring Term
                   </span>
                 </div>
               </div>
@@ -829,58 +829,79 @@ export default function ExamTakePage() {
                   </p>
                 </div>
 
-                {/* Faculty Instructions */}
-                <div>
-                  <div className="mb-2">
-                    <h3 className="font-bold text-foreground text-sm">Faculty notes</h3>
-                  </div>
-                  <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto">
-                    <p>Covers Chapters 12–18. Closed book. No reference materials. A proctor password will be provided at exam time.</p>
-                    <div className="mt-4 border-t pt-3 border-border/60">
-                      <span className="text-xs font-bold text-muted-foreground block mb-2">Reference Materials Available:</span>
-                      <ul className="list-disc pl-4 text-xs flex flex-col gap-2 text-muted-foreground font-semibold">
-                        <li className="flex items-center gap-1.5"><i className="fa-light fa-function" style={{ fontSize: "14px" }} /> Pharmacokinetic Formulas</li>
-                        <li className="flex items-center gap-1.5"><i className="fa-light fa-calculator" style={{ fontSize: "14px" }} /> Dosage Calculations</li>
-                      </ul>
+                {/* Exam instructions */}
+                <div className="p-5 rounded-xl border bg-card border-border shadow-xs flex flex-col gap-4">
+                  <div>
+                    <h3 className="font-bold text-foreground text-sm mb-2">Exam instructions</h3>
+                    <div className="text-xs leading-relaxed text-foreground/80 overflow-y-auto font-medium">
+                      <p>Covers Chapters 12–18. Closed book. No reference materials. A proctor password will be provided at exam time.</p>
+                      <div className="mt-3 border-t pt-3 border-border/60">
+                        <span className="text-xs font-bold text-muted-foreground block mb-2">Reference Materials Available:</span>
+                        <ul className="list-disc pl-4 text-xs flex flex-col gap-2 text-muted-foreground font-semibold">
+                          <li className="flex items-center gap-1.5"><i className="fa-light fa-function" style={{ fontSize: "14px" }} /> Pharmacokinetic Formulas</li>
+                          <li className="flex items-center gap-1.5"><i className="fa-light fa-calculator" style={{ fontSize: "14px" }} /> Dosage Calculations</li>
+                        </ul>
+                      </div>
                     </div>
+                  </div>
+
+                  <hr className="border-border/60" />
+
+                  <div className="text-xs leading-relaxed text-foreground/80 font-medium">
+                    <p>By taking this assessment, you agree to complete all questions independently without the assistance of any unauthorized resources, other students, or external parties. You understand that any form of academic dishonesty may result in a failing grade, academic probation, or dismissal from the program in accordance with your institution's code of conduct.</p>
                   </div>
                 </div>
 
-                {/* Instructions */}
-                <div>
-                  <div className="mb-2">
-                    <h3 className="font-bold text-foreground text-sm">Exam instructions</h3>
-                  </div>
-                  <div className="p-4 rounded-xl border bg-card border-border text-xs leading-relaxed text-foreground/80 shadow-xs h-[140px] overflow-y-auto font-medium">
-                    <p>By taking this assessment, you agree to complete all questions independently without the assistance of any unauthorized resources, other students, or external parties. You understand that any form of academic dishonesty may result in a failing grade, academic probation, or dismissal from the program in accordance with your institution's code of conduct.</p>
-                  </div>
+                {/* Attestation Checkbox */}
+                <div className="flex items-start gap-2 py-1 px-0.5 select-none text-left">
+                  <input
+                    type="checkbox"
+                    id="attestation"
+                    checked={attested}
+                    onChange={(e) => setAttested(e.target.checked)}
+                    className="mt-0.5 size-4 rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer"
+                  />
+                  <label htmlFor="attestation" className="text-xs font-medium text-foreground cursor-pointer select-none leading-normal">
+                    I understand the instructions and agree to all the <span className="underline hover:text-[var(--exam-accent)] transition-colors">terms and conditions</span>
+                  </label>
                 </div>
               </div>
 
               {/* Right Column: Exam Details & CTA Card (col-span-1) */}
-              <div className="md:col-span-1 flex flex-col gap-4 p-5 bg-card border border-border rounded-2xl shadow-md sticky top-6">
+              <div className="md:col-span-1 flex flex-col gap-5 p-5 bg-card border border-border rounded-2xl shadow-md sticky top-6">
                 
-                {/* Header Stats */}
+                {/* 1. Exam summary */}
                 <div className="grid grid-cols-3 gap-2 text-center border-b pb-4 border-border">
                   <div className="flex flex-col items-center">
                     <span className="text-base font-bold text-foreground">{questions.length}</span>
                     <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Questions</span>
                   </div>
                   <div className="flex flex-col items-center border-x border-border">
-                    <span className="text-base font-bold text-foreground">2h 00m</span>
-                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Time</span>
-                  </div>
-                  <div className="flex flex-col items-center">
                     <span className="text-base font-bold text-foreground">{Array.from(new Set(questions.map(q => q.sectionId))).length}</span>
                     <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Sections</span>
                   </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-base font-bold text-foreground">2h 00m</span>
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Time</span>
+                  </div>
                 </div>
 
-                {/* 1. Proctor Password Input */}
+                {/* 2. Exam details */}
+                <div className="flex flex-col gap-2 text-[10px] text-muted-foreground border-b pb-4 border-border/60">
+                  <div className="flex justify-between items-center">
+                    <span>Results</span>
+                    <span className="font-semibold text-foreground/80 text-right">Released after instructor review</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Security</span>
+                    <span className="font-semibold text-foreground/80 text-right">Lockdown browser</span>
+                  </div>
+                </div>
+
+                {/* 3. Password */}
                 <div className="flex flex-col gap-1.5 text-left px-0.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <i className="fa-solid fa-lock text-[var(--exam-accent)]" />
-                    Proctor Password Required
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Assessment password
                   </label>
                   <div className="relative">
                     <input
@@ -895,12 +916,9 @@ export default function ExamTakePage() {
                           handleStartExam();
                         }
                       }}
-                      placeholder="Enter proctor password"
-                      className="w-full pl-8 pr-3 py-2.5 rounded-xl border bg-background border-border text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[var(--exam-accent)]/20 focus:border-[var(--exam-accent)] font-semibold transition-all"
+                      placeholder="Enter assessment password"
+                      className="w-full px-3 py-2.5 rounded-xl border bg-background border-border text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[var(--exam-accent)]/20 focus:border-[var(--exam-accent)] font-semibold transition-all"
                     />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-                      <i className="fa-light fa-key text-[13px]" />
-                    </div>
                   </div>
                   {passwordError && (
                     <span className="text-[10px] text-destructive font-semibold flex items-center gap-1 mt-0.5">
@@ -909,22 +927,8 @@ export default function ExamTakePage() {
                   )}
                 </div>
 
-                {/* 2. Attestation Checkbox */}
-                <div className="flex items-start gap-2 py-1 px-0.5 select-none text-left">
-                  <input
-                    type="checkbox"
-                    id="attestation"
-                    checked={attested}
-                    onChange={(e) => setAttested(e.target.checked)}
-                    className="mt-0.5 size-4 rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer"
-                  />
-                  <label htmlFor="attestation" className="text-xs font-medium text-foreground cursor-pointer select-none leading-normal">
-                    I understand the instructions and agree to all the <span className="underline hover:text-[var(--exam-accent)] transition-colors">terms and conditions</span>
-                  </label>
-                </div>
-
-                {/* 3. Start CTA */}
-                <div className="flex flex-col items-center gap-1.5 w-full border-b pb-4 border-border/60">
+                {/* 4. Start CTA */}
+                <div className="flex flex-col items-center gap-1.5 w-full">
                   <button
                     onClick={handleStartExam}
                     disabled={!attested || !password}
@@ -933,40 +937,8 @@ export default function ExamTakePage() {
                     Start Exam <i className="fa-light fa-play" />
                   </button>
                   <span className="text-[10px] text-muted-foreground font-semibold">
-                    Clicking 'Start Exam' with start the exam timer
+                    Clicking 'Start Exam' will start the exam timer
                   </span>
-                </div>
-
-                {/* 4. Special Accommodations */}
-                <div className="flex flex-col gap-1.5 text-left text-amber-600 dark:text-amber-400 px-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                    <i className="fa-solid fa-universal-access" />
-                    Accommodations
-                  </span>
-                  <ul className="list-disc pl-4 text-[10px] leading-relaxed font-semibold flex flex-col gap-0.5 font-sans">
-                    <li>Extra Time (+5 mins added)</li>
-                    <li>External Keyboard Allowed</li>
-                  </ul>
-                </div>
-
-                {/* 5. Reduced Weight Details list */}
-                <div className="flex flex-col gap-2 text-[10px] text-muted-foreground pt-1">
-                  <div className="flex justify-between items-center">
-                    <span>Exam Name</span>
-                    <span className="font-semibold text-foreground/80 text-right">Anatomy &amp; Physiology Midterm</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Course</span>
-                    <span className="font-semibold text-foreground/80 text-right">BIO-301-A</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Results</span>
-                    <span className="font-semibold text-foreground/80 text-right">Released after instructor review</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Security</span>
-                    <span className="font-semibold text-foreground/80 text-right">Proctored Assessment</span>
-                  </div>
                 </div>
 
               </div>
