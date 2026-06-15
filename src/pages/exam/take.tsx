@@ -962,10 +962,10 @@ export default function ExamTakePage() {
 
       {/* PHASE 2: SECTION INTRO */}
       {phase === 'section-intro' && (
-        <div className="flex-1 flex flex-row bg-background h-full overflow-hidden relative">
+        <div className="flex-1 flex items-center justify-center p-6 bg-background h-full overflow-hidden relative">
           
           {/* Left Sidebar: Section Navigation */}
-          <div className="w-72 border-r border-border bg-card flex flex-col p-4 shrink-0 overflow-y-auto hidden md:flex">
+          <div className="absolute left-0 top-0 bottom-0 w-72 border-r border-border bg-card flex flex-col p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 px-2 flex items-center gap-2">
               <i className="fa-solid fa-list-check text-[var(--exam-accent)]" />
               Exam Sections
@@ -1004,39 +1004,37 @@ export default function ExamTakePage() {
           </div>
 
           {/* Main Area: Centered Section Intro Card */}
-          <div className="flex-grow flex items-center justify-center p-6 md:p-12 overflow-y-auto">
-            <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  Section {targetSectionId} of 6
-                </p>
-                <div className="w-16 h-16 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-[var(--exam-accent)]">
-                  <i className="fa-light fa-layer-group" style={{ fontSize: "28px" }} />
-                </div>
-                <h2 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
-                  {activeSectionInfo.name}
-                </h2>
-                <p className="text-sm text-muted-foreground font-semibold">
-                  Contains {activeSectionInfo.count} questions
-                </p>
+          <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter z-0 mx-auto">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                Section {targetSectionId} of 6
+              </p>
+              <div className="w-16 h-16 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-[var(--exam-accent)]">
+                <i className="fa-light fa-layer-group" style={{ fontSize: "28px" }} />
               </div>
-
-              <div className="p-6 bg-card border border-border rounded-2xl text-left shadow-sm">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                  Section Instructions
-                </h3>
-                <p className="text-sm leading-relaxed text-foreground">
-                  {activeSectionInfo.instructions}
-                </p>
-              </div>
-
-              <button
-                onClick={handleBeginSection}
-                className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 text-md"
-              >
-                Begin Section {targetSectionId} <i className="fa-light fa-arrow-right" />
-              </button>
+              <h2 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
+                {activeSectionInfo.name}
+              </h2>
+              <p className="text-sm text-muted-foreground font-semibold">
+                Contains {activeSectionInfo.count} questions
+              </p>
             </div>
+
+            <div className="p-6 bg-card border border-border rounded-2xl text-left shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                Section Instructions
+              </h3>
+              <p className="text-sm leading-relaxed text-foreground">
+                {activeSectionInfo.instructions}
+              </p>
+            </div>
+
+            <button
+              onClick={handleBeginSection}
+              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 text-md"
+            >
+              Begin Section {targetSectionId} <i className="fa-light fa-arrow-right" />
+            </button>
           </div>
           
         </div>
