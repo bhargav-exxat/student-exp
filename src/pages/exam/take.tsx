@@ -1243,8 +1243,8 @@ export default function ExamTakePage() {
                   }}
                   className={`flex items-center gap-1.5 px-3 h-9 rounded-lg border font-semibold text-xs cursor-pointer transition-all ${
                     highlighterColor
-                      ? "bg-amber-100 dark:bg-amber-950/40 border-amber-300 text-amber-800 dark:text-amber-300 shadow-xs"
-                      : "bg-background border-border text-foreground hover:bg-muted"
+                      ? "bg-[var(--state-flagged-bg)] border-[var(--state-flagged-border)] text-[var(--state-flagged-text)]"
+                      : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                   title="Highlighter Tool"
                 >
@@ -2501,12 +2501,12 @@ export default function ExamTakePage() {
             {/* SECTION 1: ACCESSIBILITY */}
             <div className="flex flex-col gap-4">
               <div className="pb-1 border-b border-border/40">
-                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--exam-accent)]">Accessibility</h4>
+                <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)]" style={{ fontVariant: 'small-caps' }}>Accessibility</h4>
               </div>
 
               {/* Themes */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Color Theme</label>
+                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Color Theme</label>
                 <div className="grid grid-cols-3 gap-2.5">
                   {(['light', 'dark', 'contrast'] as const).map((t) => (
                     <button
@@ -2527,7 +2527,7 @@ export default function ExamTakePage() {
               {/* Font Size Stepper */}
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Text Size</label>
+                  <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Text Size</label>
                   <span className="text-xs font-bold text-[var(--exam-accent)]">{fontSizePercent}%</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">
@@ -2555,7 +2555,7 @@ export default function ExamTakePage() {
 
               {/* Color Filters */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Colorblindness Filter</label>
+                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Colorblindness Filter</label>
                 <div className="grid grid-cols-2 gap-2.5">
                   {(['none', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((f) => (
                     <button
@@ -2575,7 +2575,7 @@ export default function ExamTakePage() {
 
               {/* Keyboard Shortcuts */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Keyboard Shortcuts</label>
+                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Keyboard Shortcuts</label>
                 <button
                   type="button"
                   onClick={() => {
@@ -2598,28 +2598,35 @@ export default function ExamTakePage() {
             {/* SECTION 2: OTHERS */}
             <div className="flex flex-col gap-4 border-t pt-4 border-border">
               <div className="pb-1 border-b border-border/40">
-                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--exam-accent)]">Others</h4>
+                <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)]" style={{ fontVariant: 'small-caps' }}>Others</h4>
               </div>
 
               {/* Highlighter Tool */}
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Highlighter Tool</label>
+                  <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Highlighter Tool</label>
                   <span className="text-xs font-bold text-[var(--exam-accent)] capitalize">
                     {highlighterColor ? `${highlighterColor} Active` : 'Disabled'}
                   </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Pill Toggle Switch */}
                   <button
                     type="button"
                     onClick={() => setHighlighterColor(prev => prev ? null : 'yellow')}
-                    className={`py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all ${
-                      highlighterColor
-                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
-                        : "bg-background border-border text-muted-foreground hover:bg-muted"
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      highlighterColor ? 'bg-[var(--exam-accent)]' : 'bg-muted'
                     }`}
+                    role="switch"
+                    aria-checked={!!highlighterColor}
+                    title={highlighterColor ? "Disable Highlighter" : "Enable Highlighter"}
                   >
-                    {highlighterColor ? 'Disable' : 'Enable'}
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        highlighterColor ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
                   </button>
 
                   <div className="flex gap-2">
@@ -2661,7 +2668,7 @@ export default function ExamTakePage() {
 
               {/* Help Request */}
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Help & Support</label>
+                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Help & Support</label>
                 {!isHelpFormOpen ? (
                   <button
                     type="button"
