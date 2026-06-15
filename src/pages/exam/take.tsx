@@ -31,6 +31,8 @@ export default function ExamTakePage() {
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = React.useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
+  const [isHelpFormOpen, setIsHelpFormOpen] = React.useState(false);
+  const [helpComment, setHelpComment] = React.useState('');
 
   // Floating Tool States
   const [showCalculator, setShowCalculator] = React.useState(false);
@@ -527,6 +529,20 @@ export default function ExamTakePage() {
 
       return { ...prev, [questionId]: updated };
     });
+  };
+
+  const handleHelpSubmit = () => {
+    setIsHelpFormOpen(false);
+    setHelpComment("");
+    setIsSettingsOpen(false);
+    
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-5 right-5 bg-foreground text-background px-4 py-3 rounded-xl shadow-lg font-semibold text-xs flex items-center gap-2 animate-bounce z-50';
+    toast.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500 text-base" /> Help request submitted successfully!';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
   };
 
   const handleToggleBookmark = (questionId: number) => {
@@ -1704,7 +1720,11 @@ export default function ExamTakePage() {
                                                 {opt.letter}
                                               </span>
                                               <div className="flex flex-col items-start gap-1">
-                                                <span className="text-foreground font-medium">{opt.text}</span>
+                                                {opt.text.includes('<math') || opt.text.includes('</math>') ? (
+                                                  <span className="text-foreground font-medium" dangerouslySetInnerHTML={{ __html: opt.text }} />
+                                                ) : (
+                                                  <span className="text-foreground font-medium">{opt.text}</span>
+                                                )}
                                                 {opt.image && (
                                                   <img 
                                                     src={opt.image} 
@@ -1745,7 +1765,11 @@ export default function ExamTakePage() {
                                                 {opt.letter}
                                               </span>
                                               <div className="flex flex-col items-start gap-1">
-                                                <span className="text-foreground font-medium">{opt.text}</span>
+                                                {opt.text.includes('<math') || opt.text.includes('</math>') ? (
+                                                  <span className="text-foreground font-medium" dangerouslySetInnerHTML={{ __html: opt.text }} />
+                                                ) : (
+                                                  <span className="text-foreground font-medium">{opt.text}</span>
+                                                )}
                                                 {opt.image && (
                                                   <img 
                                                     src={opt.image} 
@@ -2393,6 +2417,55 @@ export default function ExamTakePage() {
                   {isMac ? '⌘ + /' : 'Ctrl + /'}
                 </kbd>
               </button>
+            </div>
+
+            {/* Help Request */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Help & Support</label>
+              {!isHelpFormOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setIsHelpFormOpen(true)}
+                  className="w-full py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all bg-background border-border text-foreground hover:bg-muted flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <i className="fa-light fa-circle-question text-muted-foreground" />
+                    Submit Help Request
+                  </span>
+                  <i className="fa-solid fa-chevron-right text-muted-foreground text-[10px]" />
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
+                  <span className="text-xs font-bold text-foreground">Describe your issue:</span>
+                  <textarea
+                    value={helpComment}
+                    onChange={(e) => setHelpComment(e.target.value)}
+                    placeholder="Describe what you need help with..."
+                    rows={3}
+                    className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsHelpFormOpen(false);
+                        setHelpComment("");
+                      }}
+                      className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleHelpSubmit}
+                      disabled={!helpComment.trim()}
+                      className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                    >
+                      Submit
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button

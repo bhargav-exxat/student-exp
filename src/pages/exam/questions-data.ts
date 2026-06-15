@@ -137,10 +137,10 @@ export const questionsData: Question[] = [
     type: "mcq-single",
     text: "Review the clinical notes and identify the most likely diagnosis.",
     options: [
-      { letter: "A", text: "Acute pericarditis" },
-      { letter: "B", text: "Myocardial infarction" },
-      { letter: "C", text: "Pulmonary embolism" },
-      { letter: "D", text: "Aortic dissection" }
+      { letter: "A", text: "Acute pericarditis (Flow: \\(Q = \\frac{\\Delta P}{R}\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>Q</mi><mo>=</mo><mfrac><mrow><mi>&Delta;</mi><mi>P</mi></mrow><mi>R</mi></mfrac></math>)" },
+      { letter: "B", text: "Myocardial infarction (Pressure: \\(P = \\frac{F}{A}\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>P</mi><mo>=</mo><mfrac><mi>F</mi><mi>A</mi></mfrac></math>)" },
+      { letter: "C", text: "Pulmonary embolism (Volume: \\(V = \\frac{m}{\\rho}\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>V</mi><mo>=</mo><mfrac><mi>m</mi><mi>&rho;</mi></mfrac></math>)" },
+      { letter: "D", text: "Aortic dissection (Work: \\(W = F \\times d\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>W</mi><mo>=</mo><mi>F</mi><mo>&times;</mo><mi>d</mi></math>)" }
     ],
     attachments: [
       {
@@ -231,28 +231,7 @@ export const questionsData: Question[] = [
       }
     ]
   },
-  {
-    id: 6,
-    originalId: 15,
-    sectionId: 1,
-    sectionName: "Nervous System",
-    sectionTitle: "Section 1 of 6",
-    type: "mcq-single",
-    text: "Review the patient image and select the correct dermatological term for this lesion.",
-    options: [
-      { letter: "A", text: "Macule" },
-      { letter: "B", text: "Papule" },
-      { letter: "C", text: "Vesicle" },
-      { letter: "D", text: "Plaque" }
-    ],
-    attachments: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=900&q=80",
-        caption: "Raised, solid erythematous lesion, less than 1cm in diameter."
-      }
-    ]
-  },
+
   {
     id: 7,
     originalId: 16,
@@ -275,54 +254,7 @@ export const questionsData: Question[] = [
       }
     ]
   },
-  {
-    id: 8,
-    originalId: 19,
-    sectionId: 1,
-    sectionName: "Nervous System",
-    sectionTitle: "Section 1 of 6",
-    type: "mcq-single",
-    text: "Review the patient presentation and select the most appropriate next step in management.",
-    options: [
-      { letter: "A", text: "Discharge with pain medication" },
-      { letter: "B", text: "Schedule outpatient ultrasound" },
-      { letter: "C", text: "Immediate surgical consult" },
-      { letter: "D", text: "Start oral antibiotics" }
-    ],
-    attachments: [
-      {
-        type: "html",
-        title: "Emergency Case Record",
-        htmlContent: `<div class="p-6 bg-muted rounded-xl border max-h-[400px] overflow-y-auto font-sans text-sm leading-relaxed">
-          <h4 class="font-bold border-b pb-2 mb-3">Emergency Case Record</h4>
-          <p>A 24-year-old female presents with acute-onset right lower quadrant abdominal pain over the past 6 hours. Pain was initially diffuse and periumbilical, but has localized to the RLQ and is rated 8/10. She reports loss of appetite, nausea, and one episode of emesis.</p>
-          <p class="mt-2"><strong>On Physical Exam:</strong> Positive rebound tenderness at McBurney's point. Low-grade fever of 38.2°C.</p>
-          <p class="mt-2"><strong>Labs:</strong> WBC count is 14,800/µL with a left shift.</p>
-        </div>`
-      }
-    ]
-  },
-  {
-    id: 9,
-    originalId: 20,
-    sectionId: 1,
-    sectionName: "Nervous System",
-    sectionTitle: "Section 1 of 6",
-    type: "mcq-single",
-    text: "Watch the clinical examination video. Which cranial nerve is being tested?",
-    options: [
-      { letter: "A", text: "CN III (Oculomotor)" },
-      { letter: "B", text: "CN V (Trigeminal)" },
-      { letter: "C", text: "CN VII (Facial)" },
-      { letter: "D", text: "CN IX (Glossopharyngeal)" }
-    ],
-    attachments: [
-      {
-        type: "video",
-        src: "https://www.w3schools.com/html/mov_bbb.mp4"
-      }
-    ]
-  },
+
   {
     id: 10,
     originalId: 21,
@@ -356,53 +288,7 @@ export const questionsData: Question[] = [
       }
     ]
   },
-  {
-    id: 11,
-    originalId: 22,
-    sectionId: 1,
-    sectionName: "Nervous System",
-    sectionTitle: "Section 1 of 6",
-    type: "mcq-single",
-    text: "Read the passage regarding diabetes management and answer the question below.",
-    options: [
-      { letter: "A", text: "Increases pancreatic insulin secretion" },
-      { letter: "B", text: "Decreases hepatic glucose production" },
-      { letter: "C", text: "Inhibits carbohydrate absorption in the gut" },
-      { letter: "D", text: "Increases renal glucose excretion" }
-    ],
-    attachments: [
-      {
-        type: "html",
-        title: "Pharmacology Passage",
-        htmlContent: `<div class="p-6 bg-muted rounded-xl border max-h-[400px] overflow-y-auto font-sans text-sm leading-relaxed">
-          <p>Type 2 diabetes management typically begins with lifestyle modifications including diet and exercise. If glycemic targets are not met, Metformin is widely considered the first-line pharmacological agent due to its efficacy, safety profile, and cardiovascular benefits.</p>
-          <p class="mt-2">It works primarily by decreasing hepatic glucose production (gluconeogenesis) and increasing peripheral insulin sensitivity. Contraindications include severe renal impairment (eGFR &lt; 30 mL/min/1.73 m²).</p>
-        </div>`
-      }
-    ]
-  },
-  {
-    id: 12,
-    originalId: 23,
-    sectionId: 1,
-    sectionName: "Nervous System",
-    sectionTitle: "Section 1 of 6",
-    type: "mcq-single",
-    text: "Identify the structure indicated by the arrow in this MRI scan.",
-    options: [
-      { letter: "A", text: "Corpus Callosum" },
-      { letter: "B", text: "Thalamus" },
-      { letter: "C", text: "Cerebellum" },
-      { letter: "D", text: "Pons" }
-    ],
-    attachments: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&q=80",
-        caption: "Sagittal Brain MRI Scan showing central midline structures."
-      }
-    ]
-  },
+
   {
     id: 13,
     originalId: 31,
@@ -423,28 +309,7 @@ export const questionsData: Question[] = [
       }
     ]
   },
-  {
-    id: 14,
-    originalId: 32,
-    sectionId: 1,
-    sectionName: "Nervous System",
-    sectionTitle: "Section 1 of 6",
-    type: "mcq-single",
-    text: "Which of the following ECG strips shows atrial fibrillation?",
-    options: [
-      { letter: "A", text: "Normal sinus rhythm" },
-      { letter: "B", text: "Atrial fibrillation" },
-      { letter: "C", text: "Ventricular tachycardia" },
-      { letter: "D", text: "Second-degree AV block" }
-    ],
-    attachments: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=900&q=80",
-        caption: "ECG Auscultation Strip"
-      }
-    ]
-  },
+
   {
     id: 15,
     originalId: 3,

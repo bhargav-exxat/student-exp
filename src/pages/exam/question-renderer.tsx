@@ -33,6 +33,21 @@ export function QuestionRenderer({
     setIsDictating(false);
   }, [question.id]);
 
+  // Trigger KaTeX auto-render to parse LaTeX formulas
+  React.useEffect(() => {
+    if (typeof (window as any).renderMathInElement === "function") {
+      (window as any).renderMathInElement(document.body, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false },
+          { left: "\\(", right: "\\)", display: false },
+          { left: "\\[", right: "\\]", display: true }
+        ],
+        throwOnError: false
+      });
+    }
+  }, [question, answers]);
+
   function getAttachmentDefaultTitle(att: QuestionAttachment, index: number): string {
     switch (att.type) {
       case "image":
@@ -263,8 +278,12 @@ export function QuestionRenderer({
                     >
                     <span className="text-[12px] font-bold text-foreground leading-none">{opt.letter}</span>
                     </span>
-                    <div className="flex-grow flex flex-col items-start gap-1 py-1">
-                      <span className="text-[1em] text-foreground font-semibold text-left leading-snug">{opt.text}</span>
+                    <div className="flex-grow flex flex-col items-start gap-1 py-1 w-full overflow-hidden">
+                      {opt.text.includes('<math') || opt.text.includes('</math>') ? (
+                        <span className="text-[1em] text-foreground font-semibold text-left leading-snug" dangerouslySetInnerHTML={{ __html: opt.text }} />
+                      ) : (
+                        <span className="text-[1em] text-foreground font-semibold text-left leading-snug">{opt.text}</span>
+                      )}
                       {opt.image && (
                         <img 
                           src={opt.image} 
@@ -333,8 +352,12 @@ export function QuestionRenderer({
                     >
                     <span className="text-[12px] font-bold text-foreground leading-none">{opt.letter}</span>
                     </span>
-                    <div className="flex-grow flex flex-col items-start gap-1 py-1">
-                      <span className="text-[1em] text-foreground font-semibold text-left leading-snug">{opt.text}</span>
+                    <div className="flex-grow flex flex-col items-start gap-1 py-1 w-full overflow-hidden">
+                      {opt.text.includes('<math') || opt.text.includes('</math>') ? (
+                        <span className="text-[1em] text-foreground font-semibold text-left leading-snug" dangerouslySetInnerHTML={{ __html: opt.text }} />
+                      ) : (
+                        <span className="text-[1em] text-foreground font-semibold text-left leading-snug">{opt.text}</span>
+                      )}
                       {opt.image && (
                         <img 
                           src={opt.image} 
