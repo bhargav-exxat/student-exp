@@ -965,7 +965,7 @@ export default function ExamTakePage() {
         <div className="flex-1 flex items-center justify-center p-6 bg-background h-full overflow-hidden relative">
           
           {/* Left Sidebar: Section Navigation */}
-          <div className="absolute left-0 top-0 bottom-0 w-72 border-r border-border bg-card flex flex-col p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-card flex flex-col p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 px-2 flex items-center gap-2">
               <i className="fa-solid fa-list-check text-[var(--exam-accent)]" />
               Exam Sections
@@ -974,6 +974,12 @@ export default function ExamTakePage() {
               {[1, 2, 3, 4, 5, 6].map((secId) => {
                 const secDetails = getSectionDetails(secId);
                 const isCurrent = targetSectionId === secId;
+                const sectionQuestions = questions.filter((q) => q.sectionId === secId);
+                const totalCount = sectionQuestions.length;
+                const answeredCount = sectionQuestions.filter(isQuestionAnswered).length;
+                const unansweredCount = totalCount - answeredCount;
+                const flaggedCount = sectionQuestions.filter((q) => bookmarks.has(q.id)).length;
+
                 return (
                   <button
                     key={secId}
@@ -986,17 +992,29 @@ export default function ExamTakePage() {
                         : "border-transparent bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider">
-                        Section {secId} of 6
+                    <div className="flex flex-col gap-1 w-full">
+                      <span className={`text-xs font-extrabold truncate leading-tight ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>
+                        Section {secId}: {secDetails.name}
                       </span>
-                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold ${isCurrent ? 'bg-[var(--exam-accent)]/15 text-[var(--exam-accent)]' : 'bg-muted text-muted-foreground'}`}>
-                        {secDetails.count} Qs
-                      </span>
+                      <div className="grid grid-cols-3 gap-1.5 mt-1 pt-1.5 border-t border-border/40 text-[10px]">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Total</span>
+                          <span className={`font-extrabold text-xs ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>{totalCount}</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Unanswered</span>
+                          <span className={`font-extrabold text-xs ${unansweredCount > 0 ? "text-amber-600 dark:text-amber-400 font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
+                            {unansweredCount}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider font-bold">Flagged</span>
+                          <span className={`font-extrabold text-xs ${flaggedCount > 0 ? "text-[var(--state-flagged-text)] font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
+                            {flaggedCount}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className={`text-xs font-extrabold truncate leading-tight ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>
-                      {secDetails.name}
-                    </span>
                   </button>
                 );
               })}
@@ -2242,7 +2260,7 @@ export default function ExamTakePage() {
               </div>
               <div>
                 <div className="text-foreground text-sm font-bold">{questions.length - getAnsweredCount()}</div>
-                <div>Left</div>
+                <div>Unanswered</div>
               </div>
             </div>
 
