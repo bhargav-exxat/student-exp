@@ -35,16 +35,31 @@ export function QuestionRenderer({
 
   // Trigger KaTeX auto-render to parse LaTeX formulas
   React.useEffect(() => {
-    if (typeof (window as any).renderMathInElement === "function") {
-      (window as any).renderMathInElement(document.body, {
-        delimiters: [
-          { left: "$$", right: "$$", display: true },
-          { left: "$", right: "$", display: false },
-          { left: "\\(", right: "\\)", display: false },
-          { left: "\\[", right: "\\]", display: true }
-        ],
-        throwOnError: false
-      });
+    const renderMath = () => {
+      if (typeof (window as any).renderMathInElement === "function") {
+        (window as any).renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true }
+          ],
+          throwOnError: false
+        });
+        return true;
+      }
+      return false;
+    };
+
+    // Try rendering immediately
+    if (!renderMath()) {
+      // If scripts aren't loaded yet, poll for them
+      const timer = setInterval(() => {
+        if (renderMath()) {
+          clearInterval(timer);
+        }
+      }, 100);
+      return () => clearInterval(timer);
     }
   }, [question, answers]);
 

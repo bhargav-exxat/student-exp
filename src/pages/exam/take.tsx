@@ -282,6 +282,36 @@ export default function ExamTakePage() {
   const questions = questionsData;
   const currentQuestion = questions[currentQuestionIndex];
 
+  // Trigger KaTeX auto-render to parse LaTeX formulas
+  React.useEffect(() => {
+    const renderMath = () => {
+      if (typeof (window as any).renderMathInElement === "function") {
+        (window as any).renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true }
+          ],
+          throwOnError: false
+        });
+        return true;
+      }
+      return false;
+    };
+
+    // Try rendering immediately
+    if (!renderMath()) {
+      // If scripts aren't loaded yet, poll for them
+      const timer = setInterval(() => {
+        if (renderMath()) {
+          clearInterval(timer);
+        }
+      }, 100);
+      return () => clearInterval(timer);
+    }
+  }, [phase, currentQuestionIndex]);
+
   // Timer countdown hook
   React.useEffect(() => {
     if (phase !== 'exam' && phase !== 'section-intro') return;
@@ -835,7 +865,7 @@ export default function ExamTakePage() {
                 {/* Header Stats */}
                 <div className="grid grid-cols-3 gap-2 text-center border-b pb-4 border-border">
                   <div className="flex flex-col items-center">
-                    <span className="text-base font-bold text-foreground">27</span>
+                    <span className="text-base font-bold text-foreground">{questions.length}</span>
                     <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Questions</span>
                   </div>
                   <div className="flex flex-col items-center border-x border-border">
