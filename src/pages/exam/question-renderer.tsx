@@ -61,7 +61,7 @@ export function QuestionRenderer({
       }, 100);
       return () => clearInterval(timer);
     }
-  }, [question, answers]);
+  });
 
   function getAttachmentDefaultTitle(att: QuestionAttachment, index: number): string {
     switch (att.type) {

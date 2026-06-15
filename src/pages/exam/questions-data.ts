@@ -137,10 +137,10 @@ export const questionsData: Question[] = [
     type: "mcq-single",
     text: "Review the clinical notes and identify the most likely diagnosis.",
     options: [
-      { letter: "A", text: "Acute pericarditis (Flow: \\(Q = \\frac{\\Delta P}{R}\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>Q</mi><mo>=</mo><mfrac><mrow><mi>&Delta;</mi><mi>P</mi></mrow><mi>R</mi></mfrac></math>)" },
-      { letter: "B", text: "Myocardial infarction (Pressure: \\(P = \\frac{F}{A}\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>P</mi><mo>=</mo><mfrac><mi>F</mi><mi>A</mi></mfrac></math>)" },
-      { letter: "C", text: "Pulmonary embolism (Volume: \\(V = \\frac{m}{\\rho}\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>V</mi><mo>=</mo><mfrac><mi>m</mi><mi>&rho;</mi></mfrac></math>)" },
-      { letter: "D", text: "Aortic dissection (Work: \\(W = F \\times d\\) / <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>W</mi><mo>=</mo><mi>F</mi><mo>&times;</mo><mi>d</mi></math>)" }
+      { letter: "A", text: "Acute pericarditis (Flow: \\(Q = \\frac{\\Delta P}{R}\\))" },
+      { letter: "B", text: "Myocardial infarction (Pressure: \\(P = \\frac{F}{A}\\))" },
+      { letter: "C", text: "Pulmonary embolism (Volume: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>V</mi><mo>=</mo><mfrac><mi>m</mi><mi>&rho;</mi></mfrac></math>)" },
+      { letter: "D", text: "Aortic dissection (Work: <math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>W</mi><mo>=</mo><mi>F</mi><mo>&times;</mo><mi>d</mi></math>)" }
     ],
     attachments: [
       {

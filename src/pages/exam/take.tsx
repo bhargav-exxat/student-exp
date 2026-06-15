@@ -310,7 +310,7 @@ export default function ExamTakePage() {
       }, 100);
       return () => clearInterval(timer);
     }
-  }, [phase, currentQuestionIndex]);
+  });
 
   // Timer countdown hook
   React.useEffect(() => {
