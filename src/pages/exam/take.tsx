@@ -898,6 +898,18 @@ export default function ExamTakePage() {
                   </div>
                 </div>
 
+                {/* Accommodations */}
+                <div className="flex flex-col gap-1.5 text-left text-amber-600 dark:text-amber-400 px-0.5 border-b pb-4 border-border/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                    <i className="fa-solid fa-universal-access" />
+                    Accommodations
+                  </span>
+                  <ul className="list-disc pl-4 text-[10px] leading-relaxed font-semibold flex flex-col gap-0.5 font-sans">
+                    <li>Extra Time (+5 mins added)</li>
+                    <li>External Keyboard Allowed</li>
+                  </ul>
+                </div>
+
                 {/* 3. Password */}
                 <div className="flex flex-col gap-1.5 text-left px-0.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
