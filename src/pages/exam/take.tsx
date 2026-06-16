@@ -1144,28 +1144,13 @@ export default function ExamTakePage() {
                             : "border-transparent bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <div className="flex flex-col gap-1 w-full">
+                        <div className="flex flex-col gap-0.5 w-full">
                           <span className={`text-xs font-extrabold truncate leading-tight ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>
                             {secId}: {secDetails.name}
                           </span>
-                          <div className="grid grid-cols-3 gap-1.5 mt-1 pt-1.5 border-t border-border/40 text-[10px]">
-                            <div className="flex flex-col items-center text-center">
-                              <span className="text-[9px] font-medium text-muted-foreground">Total</span>
-                              <span className={`font-extrabold text-xs ${isCurrent ? "text-foreground" : "text-foreground/80"}`}>{totalCount}</span>
-                            </div>
-                            <div className="flex flex-col items-center text-center">
-                              <span className="text-[9px] font-medium text-muted-foreground">Unanswered</span>
-                              <span className={`font-extrabold text-xs ${unansweredCount > 0 ? "text-amber-600 dark:text-amber-400 font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
-                                {unansweredCount}
-                              </span>
-                            </div>
-                            <div className="flex flex-col items-center text-center">
-                              <span className="text-[9px] font-medium text-muted-foreground">Flagged</span>
-                              <span className={`font-extrabold text-xs ${flaggedCount > 0 ? "text-[var(--state-flagged-text)] font-bold" : (isCurrent ? "text-foreground" : "text-foreground/80")}`}>
-                                {flaggedCount}
-                              </span>
-                            </div>
-                          </div>
+                          <span className="text-[10px] text-muted-foreground font-semibold">
+                            {totalCount} question{totalCount > 1 ? "s" : ""}
+                          </span>
                         </div>
                       </button>
                     </React.Fragment>
@@ -2452,14 +2437,12 @@ export default function ExamTakePage() {
             </div>
 
             {/* Flagged Questions Section */}
-            <div className="mb-4 pb-4 border-b border-border">
-              <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
-                <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" />
-                Flagged for Review ({bookmarks.size})
-              </h4>
-              {bookmarks.size === 0 ? (
-                <p className="text-xs text-muted-foreground italic pl-1">No questions flagged yet.</p>
-              ) : (
+            {bookmarks.size > 0 && (
+              <div className="mb-4 pb-4 border-b border-border">
+                <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+                  <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" />
+                  Flagged for Review ({bookmarks.size})
+                </h4>
                 <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
                   {questions
                     .filter((q) => bookmarks.has(q.id))
@@ -2479,8 +2462,8 @@ export default function ExamTakePage() {
                       );
                     })}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Grid Circles Header */}
             <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
@@ -2500,7 +2483,7 @@ export default function ExamTakePage() {
                   
                   return (
                     <div key={secId} className="flex flex-col gap-2 border-b border-border/40 last:border-b-0 pb-3 last:pb-0">
-                      <div className="flex justify-between items-center text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                      <div className="flex justify-between items-center text-[10px] font-extrabold text-muted-foreground tracking-wider">
                         <span>{secId}: {sectionName}</span>
                         <span className="text-[9px] bg-muted/60 px-1.5 py-0.5 rounded font-mono">
                           {sectionQuestions.length} Qs
@@ -2521,7 +2504,7 @@ export default function ExamTakePage() {
                                 setCurrentQuestionIndex(idx);
                                 setIsNavigatorOpen(false);
                               }}
-                              className={`relative w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
+                              className={`relative w-[30px] h-[30px] rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
                                 isAnswered
                                   ? "bg-[var(--state-answered-bg)] text-[var(--state-answered-text)]"
                                   : isPartiallyAnswered
