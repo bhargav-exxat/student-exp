@@ -355,6 +355,8 @@ export default function ExamTakePage() {
   // Keyboard Shortcuts Hook
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+
       // 1. View keyboard shortcuts: CTRL + / or CMD + /
       if ((e.ctrlKey || e.metaKey) && (e.key === '/' || e.code === 'Slash')) {
         e.preventDefault();
@@ -1046,8 +1048,12 @@ export default function ExamTakePage() {
                         setPasswordError('');
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && attested && password) {
-                          handleStartExam();
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (attested && password) {
+                            handleStartExam();
+                          }
                         }
                       }}
                       placeholder="Enter assessment password"
@@ -1065,6 +1071,11 @@ export default function ExamTakePage() {
                 <div className="flex flex-col items-center gap-1.5 w-full">
                   <button
                     onClick={handleStartExam}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                      }
+                    }}
                     disabled={!attested || !password}
                     className="w-full bg-[var(--exam-accent)] hover:opacity-90 disabled:opacity-40 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
                   >
