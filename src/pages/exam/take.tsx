@@ -1149,6 +1149,9 @@ export default function ExamTakePage() {
                   {formatTime(timeLeft)}
                 </div>
               </div>
+
+              {/* RIGHT BALANCER */}
+              <div className="flex-1" />
             </div>
           </header>
 
