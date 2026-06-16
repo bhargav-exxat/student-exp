@@ -2796,7 +2796,12 @@ export default function ExamTakePage() {
                             <span className="truncate">
                               {reportedQuestionIds.length === 0
                                 ? "Select questions..."
-                                : `${reportedQuestionIds.length} question(s) selected`}
+                                : reportedQuestionIds
+                                    .map(id => questions.findIndex(q => q.id === id) + 1)
+                                    .filter(n => n > 0)
+                                    .sort((a, b) => a - b)
+                                    .map(n => `Q${n}`)
+                                    .join(", ")}
                             </span>
                             <i className="fa-solid fa-chevron-down text-muted-foreground text-[10px]" />
                           </button>
