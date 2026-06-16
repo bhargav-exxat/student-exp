@@ -2489,47 +2489,68 @@ export default function ExamTakePage() {
             </h4>
 
             {/* Grid Circles */}
-            <div className="flex-grow overflow-y-auto pr-1">
-              <div className="grid grid-cols-5 gap-3.5 justify-items-center">
-                {questions.map((q, idx) => {
-                  const isCurrent = idx === currentQuestionIndex;
-                  const isAnswered = isQuestionAnswered(q);
-                  const isPartiallyAnswered = isQuestionPartiallyAnswered(q);
-                  const isFlagged = bookmarks.has(q.id);
+            <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-4">
+              {(() => {
+                // Get unique sectionIds present in the questions
+                const sectionIds = Array.from(new Set(questions.map((q) => q.sectionId))).sort((a, b) => a - b);
+                return sectionIds.map((secId) => {
+                  const sectionQuestions = questions.filter((q) => q.sectionId === secId);
+                  const firstQ = sectionQuestions[0];
+                  const sectionName = firstQ ? firstQ.sectionName : `Section ${secId}`;
                   
                   return (
-                    <button
-                      key={q.id}
-                      onClick={() => {
-                        setCurrentQuestionIndex(idx);
-                        setIsNavigatorOpen(false);
-                      }}
-                      className={`relative w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
-                        isAnswered
-                          ? "bg-[var(--state-answered-bg)] text-[var(--state-answered-text)]"
-                          : isPartiallyAnswered
-                          ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
-                          : "bg-muted text-muted-foreground hover:bg-muted/70"
-                      } ${
-                        isCurrent
-                          ? "border-[3px] border-[var(--exam-accent)]"
-                          : isAnswered
-                          ? "border border-[var(--state-answered-border)]"
-                          : isPartiallyAnswered
-                          ? "border border-amber-300 dark:border-amber-800/60"
-                          : "border border-border"
-                      }`}
-                    >
-                      {idx + 1}
-                      {isFlagged && (
-                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--state-flagged-bg)] border border-[var(--state-flagged-border)] text-[var(--state-flagged-text)]" style={{ fontSize: "7px" }}>
-                          <i className="fa-solid fa-bookmark" />
+                    <div key={secId} className="flex flex-col gap-2 border-b border-border/40 last:border-b-0 pb-3 last:pb-0">
+                      <div className="flex justify-between items-center text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+                        <span>{secId}: {sectionName}</span>
+                        <span className="text-[9px] bg-muted/60 px-1.5 py-0.5 rounded font-mono">
+                          {sectionQuestions.length} Qs
                         </span>
-                      )}
-                    </button>
+                      </div>
+                      <div className="grid grid-cols-5 gap-3 justify-items-center mt-1">
+                        {sectionQuestions.map((q) => {
+                          const idx = questions.findIndex((x) => x.id === q.id);
+                          const isCurrent = idx === currentQuestionIndex;
+                          const isAnswered = isQuestionAnswered(q);
+                          const isPartiallyAnswered = isQuestionPartiallyAnswered(q);
+                          const isFlagged = bookmarks.has(q.id);
+                          
+                          return (
+                            <button
+                              key={q.id}
+                              onClick={() => {
+                                setCurrentQuestionIndex(idx);
+                                setIsNavigatorOpen(false);
+                              }}
+                              className={`relative w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
+                                isAnswered
+                                  ? "bg-[var(--state-answered-bg)] text-[var(--state-answered-text)]"
+                                  : isPartiallyAnswered
+                                  ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+                              } ${
+                                isCurrent
+                                  ? "border-[3px] border-[var(--exam-accent)]"
+                                  : isAnswered
+                                  ? "border border-[var(--state-answered-border)]"
+                                  : isPartiallyAnswered
+                                  ? "border border-amber-300 dark:border-amber-800/60"
+                                  : "border border-border"
+                              }`}
+                            >
+                              {idx + 1}
+                              {isFlagged && (
+                                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--state-flagged-bg)] border border-[var(--state-flagged-border)] text-[var(--state-flagged-text)]" style={{ fontSize: "7px" }}>
+                                  <i className="fa-solid fa-bookmark" />
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
-                })}
-              </div>
+                });
+              })()}
             </div>
 
             {/* Legend Section */}

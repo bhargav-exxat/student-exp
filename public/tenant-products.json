@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "exportedAt": "2026-06-16T04:53:29.663Z",
+  "exportedAt": "2026-06-16T07:02:14.807Z",
   "catalog": [
     {
       "id": "tenant-assessment",
@@ -83,7 +83,7 @@
       "defaultPath": "/assessment/dashboard",
       "source": "user",
       "createdAt": "2026-06-10T09:50:12.594Z",
-      "updatedAt": "2026-06-15T16:35:58.603Z",
+      "updatedAt": "2026-06-16T06:01:35.776Z",
       "deletedAt": null,
       "extensions": {}
     }
