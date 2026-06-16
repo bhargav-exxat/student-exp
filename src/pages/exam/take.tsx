@@ -69,7 +69,9 @@ export default function ExamTakePage() {
   const [adminPreCurving, setAdminPreCurving] = React.useState(false);
   const [adminCourseWeight, setAdminCourseWeight] = React.useState(25);
   const [adminKeyVisibility, setAdminKeyVisibility] = React.useState(true);
-  const [adminKeyType, setAdminKeyType] = React.useState<'answers-only' | 'match' | 'match-rationale' | 'rationale-only'>('match-rationale');
+  const [adminAllowDownloadKey, setAdminAllowDownloadKey] = React.useState(true);
+  const [adminDisplayKeyAndChoices, setAdminDisplayKeyAndChoices] = React.useState(true);
+  const [adminDisplayRationale, setAdminDisplayRationale] = React.useState(true);
   const [adminSectionVisibility, setAdminSectionVisibility] = React.useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -745,6 +747,10 @@ export default function ExamTakePage() {
 
   const getAnsweredCount = () => {
     return questions.filter(isQuestionAnswered).length;
+  };
+
+  const getPartiallyAnsweredCount = () => {
+    return questions.filter(isQuestionPartiallyAnswered).length;
   };
 
   const getSectionDetails = (sectionId: number) => {
@@ -1801,23 +1807,25 @@ export default function ExamTakePage() {
                           Answer Key &amp; Explanations
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {adminKeyType === 'answers-only' ? 'Compact master key' 
-                            : adminKeyType === 'match' ? 'Detailed correct/incorrect comparison'
-                            : adminKeyType === 'match-rationale' ? 'Comparison with answers, rationales, and details'
+                          {(!adminDisplayKeyAndChoices && !adminDisplayRationale) ? 'Compact master key' 
+                            : (adminDisplayKeyAndChoices && !adminDisplayRationale) ? 'Detailed correct/incorrect comparison'
+                            : (adminDisplayKeyAndChoices && adminDisplayRationale) ? 'Comparison with answers, rationales, and details'
                             : 'Study Guide mode (Student choices hidden)'}
                         </p>
                       </div>
                       
-                      <button
-                        onClick={handleDownloadKey}
-                        className="px-3 py-1.5 bg-[var(--exam-accent)] text-white hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
-                      >
-                        <i className="fa-light fa-file-arrow-down" /> Download Key (PDF)
-                      </button>
+                      {adminAllowDownloadKey && (
+                        <button
+                          onClick={handleDownloadKey}
+                          className="px-3 py-1.5 bg-[var(--exam-accent)] text-white hover:opacity-90 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0"
+                        >
+                          <i className="fa-light fa-file-arrow-down" /> Download Key (PDF)
+                        </button>
+                      )}
                     </div>
 
                     {/* Filter controls (Only for Type 2, 3, 4) */}
-                    {adminKeyType !== 'answers-only' && (
+                    {(adminDisplayKeyAndChoices || adminDisplayRationale) && (
                       <div className="px-6 py-3 border-b border-border/60 bg-muted/10 flex flex-wrap gap-2 items-center text-xs">
                         <span className="font-bold text-muted-foreground uppercase tracking-wider mr-2">Filter questions:</span>
                         {[
@@ -1845,7 +1853,7 @@ export default function ExamTakePage() {
                     <div className="p-6">
                       
                       {/* TYPE 1: Answers Only (Compact Grid) */}
-                      {adminKeyType === 'answers-only' && (
+                      {(!adminDisplayKeyAndChoices && !adminDisplayRationale) && (
                         <div className="flex flex-col gap-6 animate-card-enter">
                           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                             {questions.map((q, idx) => {
@@ -1874,7 +1882,7 @@ export default function ExamTakePage() {
                       )}
 
                       {/* TYPE 2, 3, 4: Detailed Question lists */}
-                      {adminKeyType !== 'answers-only' && (
+                      {(adminDisplayKeyAndChoices || adminDisplayRationale) && (
                         <div className="flex flex-col gap-6 max-h-[600px] overflow-y-auto pr-1">
                           {filteredQuestions.length === 0 ? (
                             <div className="text-center py-8 text-xs text-muted-foreground italic">
@@ -1886,8 +1894,8 @@ export default function ExamTakePage() {
                               const isAnswered = isQuestionAnswered(q);
                               const stuAns = answers[q.id];
                               const corrAns = correctAnswers[q.id];
-                              const hasRationale = adminKeyType === 'match-rationale' || adminKeyType === 'rationale-only';
-                              const showComparison = adminKeyType !== 'rationale-only'; // Hide student choices in Rationale-Only Study Guide
+                              const hasRationale = adminDisplayRationale;
+                              const showComparison = adminDisplayKeyAndChoices; // Hide student choices in Rationale-Only Study Guide
 
                               return (
                                 <div 
@@ -2324,34 +2332,42 @@ export default function ExamTakePage() {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Key Display Option</span>
-                      <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Key Display Options</span>
+                      <div className="flex flex-col gap-2">
                         {[
-                          { id: 'answers-only', label: 'Correct Answers Only + Download' },
-                          { id: 'match', label: 'Correct Options + Student Choices' },
-                          { id: 'match-rationale', label: 'Options + Choices + Rationales' },
-                          { id: 'rationale-only', label: 'Correct Answers + Rationales Only' }
+                          { id: 'download', label: 'Download key', value: adminAllowDownloadKey, onChange: setAdminAllowDownloadKey },
+                          { id: 'displayChoices', label: 'Display key + Choices', value: adminDisplayKeyAndChoices, onChange: setAdminDisplayKeyAndChoices },
+                          { id: 'displayRationale', label: 'Display rationale', value: adminDisplayRationale, onChange: setAdminDisplayRationale }
                         ].map((opt) => (
-                          <label 
+                          <div 
                             key={opt.id} 
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-left cursor-pointer transition-all ${
+                            className={`flex items-center justify-between p-2.5 rounded-xl border transition-colors ${
                               !adminKeyVisibility 
                                 ? 'opacity-30 cursor-not-allowed border-slate-800/40 text-slate-600 bg-transparent'
-                                : adminKeyType === opt.id
+                                : opt.value
                                 ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300 font-bold'
                                 : 'bg-slate-950/20 border-slate-800 text-slate-400 hover:border-slate-700/60'
                             }`}
                           >
-                            <input 
-                              type="radio"
-                              name="keyTypeRadio"
+                            <span className="text-[11px] font-semibold">{opt.label}</span>
+                            <button
+                              type="button"
                               disabled={!adminKeyVisibility}
-                              checked={adminKeyType === opt.id}
-                              onChange={() => setAdminKeyType(opt.id as any)}
-                              className="size-3.5 text-indigo-500 border-slate-700 bg-slate-900 focus:ring-indigo-600"
-                            />
-                            <span className="text-[10px] leading-tight">{opt.label}</span>
-                          </label>
+                              onClick={() => opt.onChange(!opt.value)}
+                              className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                opt.value ? 'bg-indigo-500' : 'bg-slate-850'
+                              } ${!adminKeyVisibility ? 'opacity-40 cursor-not-allowed' : ''}`}
+                              role="switch"
+                              aria-checked={opt.value}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className={`pointer-events-none inline-block size-3 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                                  opt.value ? 'translate-x-3' : 'translate-x-0'
+                                }`}
+                              />
+                            </button>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -3002,32 +3018,50 @@ export default function ExamTakePage() {
 
             <div className="p-4 rounded-xl border text-left bg-muted/40 border-border">
               <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Questions Answered</span>
+                <span className="text-xs font-bold text-muted-foreground">Questions Answered</span>
                 <span className="text-sm font-bold text-foreground">{getAnsweredCount()} / {questions.length}</span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Unanswered Questions</span>
+                <span className="text-xs font-bold text-muted-foreground">Unanswered Questions</span>
                 <span className={`text-sm font-bold ${questions.length - getAnsweredCount() > 0 ? "text-destructive" : "text-foreground"}`}>
                   {questions.length - getAnsweredCount()}
                 </span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Flagged for Review</span>
+                <span className="text-xs font-bold text-muted-foreground">Partially Answered</span>
+                <span className={`text-sm font-bold ${getPartiallyAnsweredCount() > 0 ? "text-amber-500" : "text-foreground"}`}>
+                  {getPartiallyAnsweredCount()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-1.5 border-b border-border">
+                <span className="text-xs font-bold text-muted-foreground">Flagged For Review</span>
                 <span className="text-sm font-bold text-foreground">{bookmarks.size}</span>
               </div>
               <div className="flex justify-between items-center py-1.5">
-                <span className="text-xs font-bold text-muted-foreground uppercase">Time Remaining</span>
+                <span className="text-xs font-bold text-muted-foreground">Time Remaining</span>
                 <span className={`text-sm font-bold font-timer ${timeLeft <= 300 ? "text-destructive animate-pulse" : "text-foreground"}`}>
                   {formatTime(timeLeft)}
                 </span>
               </div>
             </div>
 
-            {bookmarks.size > 0 && (
+            {(bookmarks.size > 0 || getPartiallyAnsweredCount() > 0) && (
               <div className="p-3 bg-[var(--state-flagged-bg)] border border-[var(--state-flagged-border)] rounded-xl text-left flex items-start gap-2 text-xs text-[var(--state-flagged-text)] leading-relaxed animate-card-enter">
-                <i className="fa-solid fa-bookmark mt-0.5 shrink-0 text-sm" />
+                <i className="fa-solid fa-bookmark mt-0.5 shrink-0 text-sm animate-pulse" />
                 <span>
-                  You have <strong>{bookmarks.size}</strong> question{bookmarks.size > 1 ? 's' : ''} flagged for review. Use the review CTA below to inspect them.
+                  You have{" "}
+                  {bookmarks.size > 0 && (
+                    <>
+                      <strong>{bookmarks.size}</strong> question{bookmarks.size > 1 ? "s" : ""} flagged for review
+                    </>
+                  )}
+                  {bookmarks.size > 0 && getPartiallyAnsweredCount() > 0 && " and "}
+                  {getPartiallyAnsweredCount() > 0 && (
+                    <>
+                      <strong>{getPartiallyAnsweredCount()}</strong> question{getPartiallyAnsweredCount() > 1 ? "s" : ""} partially answered
+                    </>
+                  )}
+                  . Use the review CTA below to inspect them.
                 </span>
               </div>
             )}
@@ -3042,19 +3076,20 @@ export default function ExamTakePage() {
             <div className="flex gap-3 mt-1">
               <button
                 type="button"
-                disabled={bookmarks.size === 0}
+                disabled={bookmarks.size === 0 && getPartiallyAnsweredCount() === 0}
                 onClick={() => {
                   setIsSubmitModalOpen(false);
-                  const firstFlaggedQ = questions.find((q) => bookmarks.has(q.id));
-                  if (firstFlaggedQ) {
-                    const idx = questions.findIndex((x) => x.id === firstFlaggedQ.id);
+                  const firstTargetQ = questions.find((q) => bookmarks.has(q.id) || isQuestionPartiallyAnswered(q));
+                  if (firstTargetQ) {
+                    const idx = questions.findIndex((x) => x.id === firstTargetQ.id);
                     setCurrentQuestionIndex(idx !== -1 ? idx : 0);
                   }
                 }}
                 className="flex-1 border border-border bg-background hover:bg-muted font-bold py-2.5 rounded-xl transition-all cursor-pointer text-xs flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed text-foreground"
-                title={bookmarks.size === 0 ? "No flagged questions to review" : "Review Flagged Questions"}
+                title={(bookmarks.size === 0 && getPartiallyAnsweredCount() === 0) ? "No flagged or partially answered questions to review" : "Review Flagged or Partially Answered Questions"}
               >
-                <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" /> Review Flagged
+                <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" />{" "}
+                {bookmarks.size > 0 ? "Review Flagged" : "Review Partial"}
               </button>
               <button
                 onClick={() => {
