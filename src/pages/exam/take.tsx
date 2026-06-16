@@ -33,6 +33,10 @@ export default function ExamTakePage() {
   const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
   const [isHelpFormOpen, setIsHelpFormOpen] = React.useState(false);
   const [helpComment, setHelpComment] = React.useState('');
+  const [isReportFormOpen, setIsReportFormOpen] = React.useState(false);
+  const [isReportDropdownOpen, setIsReportDropdownOpen] = React.useState(false);
+  const [reportedQuestionIds, setReportedQuestionIds] = React.useState<number[]>([]);
+  const [reportComment, setReportComment] = React.useState('');
 
   // Floating Tool States
   const [showCalculator, setShowCalculator] = React.useState(false);
@@ -203,6 +207,21 @@ export default function ExamTakePage() {
     setAnswers(newAnswers);
   };
   isDuplicateTabRef.current = isDuplicateTab;
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.report-dropdown-container')) {
+        setIsReportDropdownOpen(false);
+      }
+    };
+    if (isReportDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isReportDropdownOpen]);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -584,6 +603,22 @@ export default function ExamTakePage() {
     }, 3000);
   };
 
+  const handleReportSubmit = () => {
+    setIsReportFormOpen(false);
+    setIsReportDropdownOpen(false);
+    setReportedQuestionIds([]);
+    setReportComment("");
+    setIsSettingsOpen(false);
+    
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-5 right-5 bg-foreground text-background px-4 py-3 rounded-xl shadow-lg font-semibold text-xs flex items-center gap-2 animate-bounce z-50';
+    toast.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500 text-base" /> Question report submitted successfully!';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
+  };
+
   const handleToggleBookmark = (questionId: number) => {
     setBookmarks((prev) => {
       const updated = new Set(prev);
@@ -680,7 +715,32 @@ export default function ExamTakePage() {
         [currentQuestion.id]: [...currentList, { text: selectionText, color: highlighterColor }]
       };
     });
-    selection.removeAllRanges();
+    
+    setTimeout(() => {
+      window.getSelection()?.removeAllRanges();
+    }, 0);
+  };
+
+  const handleRemoveHighlight = (text: string) => {
+    setHighlights((prev) => {
+      const currentList = prev[currentQuestion.id] || [];
+      return {
+        ...prev,
+        [currentQuestion.id]: currentList.filter((h) => h.text !== text)
+      };
+    });
+  };
+
+  const handleUpdateHighlightColor = (text: string, newColor: 'yellow' | 'blue' | 'pink' | 'green') => {
+    setHighlights((prev) => {
+      const currentList = prev[currentQuestion.id] || [];
+      return {
+        ...prev,
+        [currentQuestion.id]: currentList.map((h) =>
+          h.text === text ? { ...h, color: newColor } : h
+        )
+      };
+    });
   };
 
   const getAnsweredCount = () => {
@@ -1018,10 +1078,38 @@ export default function ExamTakePage() {
 
       {/* PHASE 2: SECTION INTRO */}
       {phase === 'section-intro' && (
-        <div className="flex-1 flex items-center justify-center p-6 bg-background h-full overflow-hidden relative">
-          
-          {/* Left Sidebar: Section Navigation */}
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-card flex flex-col justify-center p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative pb-16 bg-background">
+          {/* Main Area: Centered Section Intro Card */}
+          <div className="flex-grow flex items-center justify-center p-6 overflow-y-auto">
+            <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter mx-auto">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  Section {targetSectionId} of 6
+                </p>
+                <div className="w-16 h-16 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-[var(--exam-accent)]">
+                  <i className="fa-light fa-layer-group" style={{ fontSize: "28px" }} />
+                </div>
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
+                  {activeSectionInfo.name}
+                </h2>
+                <p className="text-sm text-muted-foreground font-semibold">
+                  Contains {activeSectionInfo.count} questions
+                </p>
+              </div>
+
+              <div className="p-6 bg-card border border-border rounded-2xl text-left shadow-sm">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                  Section Instructions
+                </h3>
+                <p className="text-sm leading-relaxed text-foreground">
+                  {activeSectionInfo.instructions}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar: Section Navigation */}
+          <div className="absolute right-0 top-0 bottom-16 w-72 bg-card border-l border-border flex flex-col justify-center p-4 shrink-0 overflow-y-auto hidden md:flex z-10">
             <div className="w-full flex flex-col my-auto">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 px-2 flex items-center gap-2">
                 <i className="fa-solid fa-list-check text-[var(--exam-accent)]" />
@@ -1081,40 +1169,34 @@ export default function ExamTakePage() {
             </div>
           </div>
 
-          {/* Main Area: Centered Section Intro Card */}
-          <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter z-0 mx-auto">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Section {targetSectionId} of 6
-              </p>
-              <div className="w-16 h-16 rounded-full bg-muted border border-border flex items-center justify-center mx-auto mb-4 text-[var(--exam-accent)]">
-                <i className="fa-light fa-layer-group" style={{ fontSize: "28px" }} />
-              </div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
-                {activeSectionInfo.name}
-              </h2>
-              <p className="text-sm text-muted-foreground font-semibold">
-                Contains {activeSectionInfo.count} questions
-              </p>
-            </div>
+          {/* FOOTER */}
+          <footer className="absolute bottom-0 left-0 right-0 h-16 border-t flex items-center justify-between px-6 bg-card border-border shadow-lg z-30">
+            <button
+              onClick={() => {
+                if (targetSectionId === 1) {
+                  setPhase('instructions');
+                } else {
+                  setTargetSectionId(prev => prev - 1);
+                }
+              }}
+              className="flex items-center gap-2 px-4 h-10 border rounded-lg bg-background border-border text-foreground hover:bg-muted font-semibold text-sm cursor-pointer"
+            >
+              <i className="fa-light fa-arrow-left" />
+              <span>Previous</span>
+            </button>
 
-            <div className="p-6 bg-card border border-border rounded-2xl text-left shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Section Instructions
-              </h3>
-              <p className="text-sm leading-relaxed text-foreground">
-                {activeSectionInfo.instructions}
-              </p>
-            </div>
+            <span className="text-sm font-semibold text-muted-foreground">
+              Section {targetSectionId} <span className="text-muted-foreground/60">of 6</span>
+            </span>
 
             <button
               onClick={handleBeginSection}
-              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 text-md"
+              className="flex items-center gap-2 px-5 h-10 bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 font-semibold text-sm cursor-pointer"
             >
-              Begin Section {targetSectionId} <i className="fa-light fa-arrow-right" />
+              <span>Begin Section {targetSectionId}</span>
+              <i className="fa-light fa-arrow-right" />
             </button>
-          </div>
-          
+          </footer>
         </div>
       )}
 
@@ -1296,6 +1378,9 @@ export default function ExamTakePage() {
           {/* QUESTION PANEL */}
           <div 
             id="question-content-container"
+            onMouseDown={() => {
+              window.getSelection()?.removeAllRanges();
+            }}
             onMouseUp={handleTextHighlight}
             className="flex-1 overflow-hidden flex flex-col bg-background p-6"
           >
@@ -1307,6 +1392,8 @@ export default function ExamTakePage() {
               crossedOut={crossedOut}
               onToggleCrossOut={handleToggleCrossOut}
               highlights={highlights}
+              onRemoveHighlight={handleRemoveHighlight}
+              onUpdateHighlightColor={handleUpdateHighlightColor}
             />
           </div>
 
@@ -2333,7 +2420,7 @@ export default function ExamTakePage() {
             </div>
 
             {/* Navigator Overview */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4 bg-muted/30 p-3 rounded-xl border border-border">
+            <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold tracking-wider text-muted-foreground mb-4 bg-muted/30 p-3 rounded-xl border border-border">
               <div>
                 <div className="text-foreground text-sm font-bold">{getAnsweredCount()}</div>
                 <div>Answered</div>
@@ -2350,7 +2437,7 @@ export default function ExamTakePage() {
 
             {/* Flagged Questions Section */}
             <div className="mb-4 pb-4 border-b border-border">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+              <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
                 <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" />
                 Flagged for Review ({bookmarks.size})
               </h4>
@@ -2380,7 +2467,7 @@ export default function ExamTakePage() {
             </div>
 
             {/* Grid Circles Header */}
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+            <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
               <i className="fa-light fa-grid-2" />
               All Questions ({questions.length})
             </h4>
@@ -2402,15 +2489,19 @@ export default function ExamTakePage() {
                         setIsNavigatorOpen(false);
                       }}
                       className={`relative w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
-                        isCurrent
-                          ? "ring-2 ring-[var(--exam-accent)] ring-offset-2 dark:ring-offset-background"
-                          : ""
-                      } ${
                         isAnswered
-                          ? "bg-[var(--state-answered-bg)] border border-[var(--state-answered-border)] text-[var(--state-answered-text)]"
+                          ? "bg-[var(--state-answered-bg)] text-[var(--state-answered-text)]"
                           : isPartiallyAnswered
-                          ? "bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-400"
-                          : "bg-muted border border-border text-muted-foreground hover:bg-muted/70"
+                          ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+                          : "bg-muted text-muted-foreground hover:bg-muted/70"
+                      } ${
+                        isCurrent
+                          ? "border-[3px] border-[var(--exam-accent)]"
+                          : isAnswered
+                          ? "border border-[var(--state-answered-border)]"
+                          : isPartiallyAnswered
+                          ? "border border-amber-300 dark:border-amber-800/60"
+                          : "border border-border"
                       }`}
                     >
                       {idx + 1}
@@ -2427,7 +2518,7 @@ export default function ExamTakePage() {
 
             {/* Legend Section */}
             <div className="border-t pt-4 mt-4 border-border flex flex-col gap-2 shrink-0">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <i className="fa-light fa-circle-info" />
                 Status Legend
               </h4>
@@ -2438,15 +2529,15 @@ export default function ExamTakePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-4.5 h-4.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold text-[9px]">◒</span>
-                  <span className="text-foreground font-medium text-[11px]">Partially answered</span>
+                  <span className="text-foreground font-medium text-[11px]">Partially Answered</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-4.5 h-4.5 rounded-full bg-muted border border-border text-muted-foreground flex items-center justify-center font-bold text-[9px]">•</span>
                   <span className="text-foreground font-medium text-[11px]">Unanswered</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-4.5 h-4.5 rounded-full ring-2 ring-[var(--exam-accent)] ring-offset-1 bg-muted border border-border text-muted-foreground flex items-center justify-center font-bold text-[9px]">1</span>
-                  <span className="text-foreground font-medium text-[11px]">Current question</span>
+                  <span className="w-4.5 h-4.5 rounded-full bg-muted border-2 border-[var(--exam-accent)] text-[var(--exam-accent)] flex items-center justify-center font-bold text-[9px]">1</span>
+                  <span className="text-foreground font-medium text-[11px]">Current Question</span>
                 </div>
                 <div className="flex items-center gap-2 col-span-2">
                   <span className="relative w-4.5 h-4.5 rounded-full bg-muted border border-border text-muted-foreground flex items-center justify-center font-bold text-[9px]">
@@ -2484,244 +2575,319 @@ export default function ExamTakePage() {
             className="absolute inset-0 bg-black/40 backdrop-blur-xs"
           ></div>
           
-          <div className="relative max-w-md w-full max-h-[85vh] overflow-y-auto p-6 bg-card border border-border rounded-2xl shadow-2xl flex flex-col gap-6 animate-card-enter text-left z-10">
-            <div className="flex justify-between items-center border-b pb-3 border-border">
+          <div className="relative max-w-lg w-full max-h-[85vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col animate-card-enter text-left z-10 overflow-hidden">
+            {/* Sticky Header */}
+            <div className="flex justify-between items-center border-b p-6 pb-3 border-border shrink-0 bg-card sticky top-0 z-10">
               <h3 className="font-bold text-md text-foreground flex items-center gap-2">
                 <i className="fa-light fa-toolbox text-[var(--exam-accent)]" />
                 Tools
               </h3>
               <button
                 onClick={() => setIsSettingsOpen(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
               >
                 <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
               </button>
             </div>
 
-            {/* SECTION 1: ACCESSIBILITY */}
-            <div className="flex flex-col gap-4">
-              <div className="pb-1 border-b border-border/40">
-                <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)]" style={{ fontVariant: 'small-caps' }}>Accessibility</h4>
-              </div>
-
-              {/* Themes */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Color Theme</label>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {(['light', 'dark', 'contrast'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTheme(t)}
-                      className={`py-2 px-3 rounded-lg border font-semibold text-xs capitalize cursor-pointer transition-all ${
-                        theme === t
-                          ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
-                          : "bg-background border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
+            {/* Scrollable Content Body */}
+            <div className="flex-grow overflow-y-auto p-6 flex flex-col gap-6">
+              {/* SECTION 1: ACCESSIBILITY */}
+              <div className="flex flex-col gap-4">
+                <div className="pb-1 border-b border-border/40">
+                  <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)] normal-case">Accessibility</h4>
                 </div>
-              </div>
 
-              {/* Font Size Stepper */}
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Text Size</label>
-                  <span className="text-xs font-bold text-[var(--exam-accent)]">{fontSizePercent}%</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    disabled={fontSizePercent <= 100}
-                    onClick={() => setFontSizePercent(prev => Math.max(100, prev - 50))}
-                    className="py-2 px-3 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <i className="fa-solid fa-minus" /> Decrease (50%)
-                  </button>
-                  <button
-                    type="button"
-                    disabled={fontSizePercent >= 200}
-                    onClick={() => setFontSizePercent(prev => Math.min(200, prev + 50))}
-                    className="py-2 px-3 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <i className="fa-solid fa-plus" /> Increase (50%)
-                  </button>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-normal">
-                  WCAG compliance: Increase/decrease text size (up to 200%, with a stepper of 50%).
-                </p>
-              </div>
-
-              {/* Color Filters */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Colorblindness Filter</label>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {(['none', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setColorFilter(f)}
-                      className={`py-2 px-3 rounded-lg border font-semibold text-xs capitalize cursor-pointer transition-all ${
-                        colorFilter === f
-                          ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
-                          : "bg-background border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {f === 'none' ? 'None' : f}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Keyboard Shortcuts */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Keyboard Shortcuts</label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSettingsOpen(false);
-                    setIsShortcutsOpen(true);
-                  }}
-                  className="w-full py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all bg-background border-border text-foreground hover:bg-muted flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <i className="fa-light fa-keyboard text-muted-foreground" />
-                    View Keyboard Shortcuts
-                  </span>
-                  <kbd className="px-1.5 py-0.5 bg-muted border border-border rounded text-[10px] font-mono font-bold text-muted-foreground">
-                    {isMac ? '⌘ + /' : 'Ctrl + /'}
-                  </kbd>
-                </button>
-              </div>
-            </div>
-
-            {/* SECTION 2: OTHERS */}
-            <div className="flex flex-col gap-4 border-t pt-4 border-border">
-              <div className="pb-1 border-b border-border/40">
-                <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)]" style={{ fontVariant: 'small-caps' }}>Others</h4>
-              </div>
-
-              {/* Highlighter Tool */}
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Highlighter Tool</label>
-                  <span className="text-xs font-bold text-[var(--exam-accent)] capitalize">
-                    {highlighterColor ? `${highlighterColor} Active` : 'Disabled'}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-4">
-                  {/* Pill Toggle Switch */}
-                  <button
-                    type="button"
-                    onClick={() => setHighlighterColor(prev => prev ? null : 'yellow')}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      highlighterColor ? 'bg-[var(--exam-accent)]' : 'bg-muted'
-                    }`}
-                    role="switch"
-                    aria-checked={!!highlighterColor}
-                    title={highlighterColor ? "Disable Highlighter" : "Enable Highlighter"}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                        highlighterColor ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-
-                  <div className="flex gap-2">
-                    {(['yellow', 'blue', 'pink', 'green'] as const).map((color) => {
-                      const colorBg = {
-                        yellow: 'bg-yellow-200 dark:bg-yellow-500/40 border-yellow-400',
-                        blue: 'bg-blue-200 dark:bg-blue-500/40 border-blue-400',
-                        pink: 'bg-pink-200 dark:bg-pink-500/40 border-pink-400',
-                        green: 'bg-green-200 dark:bg-green-500/40 border-green-400'
-                      }[color];
-                      
-                      const isSelected = highlighterColor === color;
-
-                      return (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => setHighlighterColor(color)}
-                          className={`size-7 rounded-full border-2 transition-all cursor-pointer ${colorBg} ${
-                            isSelected ? 'ring-2 ring-foreground scale-110' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'
-                          }`}
-                          title={`Highlight with ${color}`}
-                        />
-                      );
-                    })}
+                {/* Themes */}
+                <div className="flex justify-between items-center w-full">
+                  <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">Color Theme</label>
+                  <div className="flex items-center gap-1.5">
+                    {(['light', 'dark', 'contrast'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        className={`py-1.5 px-3 rounded-lg border font-semibold text-[11px] capitalize cursor-pointer transition-all ${
+                          theme === t
+                            ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
+                            : "bg-background border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  {(highlights[currentQuestion.id] && highlights[currentQuestion.id].length > 0) && (
+                {/* Font Size Stepper */}
+                <div className="flex justify-between items-center w-full">
+                  <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">
+                    Text Size <span className="text-xs font-bold text-[var(--exam-accent)] ml-1">({fontSizePercent}%)</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => setHighlights(prev => ({ ...prev, [currentQuestion.id]: [] }))}
-                      className="py-1.5 px-2.5 rounded-lg border border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/10 text-[10px] font-bold cursor-pointer transition-all"
+                      disabled={fontSizePercent <= 100}
+                      onClick={() => setFontSizePercent(prev => Math.max(100, prev - 50))}
+                      className="size-7 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center transition-all"
+                      title="Decrease text size"
                     >
-                      Clear highlights
+                      <i className="fa-solid fa-minus" />
                     </button>
+                    <button
+                      type="button"
+                      disabled={fontSizePercent >= 200}
+                      onClick={() => setFontSizePercent(prev => Math.min(200, prev + 50))}
+                      className="size-7 rounded-lg border bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-bold text-xs cursor-pointer flex items-center justify-center transition-all"
+                      title="Increase text size"
+                    >
+                      <i className="fa-solid fa-plus" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Color Filters */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">Colorblindness Filter</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(['none', 'protanopia', 'deuteranopia', 'tritanopia'] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setColorFilter(f)}
+                        className={`py-1 px-1 rounded-md border font-semibold text-[10px] capitalize cursor-pointer transition-all text-center truncate ${
+                          colorFilter === f
+                            ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
+                            : "bg-background border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                        title={f === 'none' ? 'None' : f}
+                      >
+                        {f === 'none' ? 'None' : f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Keyboard Shortcuts */}
+                <div className="flex justify-between items-center w-full">
+                  <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">
+                    Keyboard Shortcuts <span className="text-[10px] text-muted-foreground/80 font-mono">({isMac ? '⌘ + /' : 'Ctrl + /'})</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSettingsOpen(false);
+                      setIsShortcutsOpen(true);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground hover:bg-muted text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5"
+                  >
+                    <i className="fa-light fa-eye" />
+                    <span>View</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 2: OTHERS */}
+              <div className="flex flex-col gap-4 border-t pt-4 border-border">
+                <div className="pb-1 border-b border-border/40">
+                  <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)] normal-case">Others</h4>
+                </div>
+
+                {/* Highlighter Tool */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center pb-1 w-full gap-3">
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case shrink-0">Highlighter Tool</label>
+                      {highlighterColor && (
+                        <div className="flex items-center gap-1.5 animate-card-enter">
+                          {(['yellow', 'blue', 'pink', 'green'] as const).map((color) => {
+                            const colorBg = {
+                              yellow: 'bg-yellow-200 dark:bg-yellow-500/40 border-yellow-400',
+                              blue: 'bg-blue-200 dark:bg-blue-500/40 border-blue-400',
+                              pink: 'bg-pink-200 dark:bg-pink-500/40 border-pink-400',
+                              green: 'bg-green-200 dark:bg-green-500/40 border-green-400'
+                            }[color];
+                            
+                            const isSelected = highlighterColor === color;
+
+                            return (
+                              <button
+                                key={color}
+                                type="button"
+                                onClick={() => setHighlighterColor(color)}
+                                className={`size-5 rounded-full border transition-all cursor-pointer ${colorBg} ${
+                                  isSelected ? 'ring-2 ring-foreground scale-110' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'
+                                }`}
+                                title={`Highlight with ${color}`}
+                              />
+                            );
+                          })}
+
+                          {(highlights[currentQuestion.id] && highlights[currentQuestion.id].length > 0) && (
+                            <button
+                              type="button"
+                              onClick={() => setHighlights(prev => ({ ...prev, [currentQuestion.id]: [] }))}
+                              className="py-0.5 px-1.5 rounded border border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/10 text-[9px] font-bold cursor-pointer transition-all shrink-0 ml-1"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {/* Pill Toggle Switch at title level */}
+                    <button
+                      type="button"
+                      onClick={() => setHighlighterColor(prev => prev ? null : 'yellow')}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        highlighterColor ? 'bg-[var(--exam-accent)]' : 'bg-muted'
+                      }`}
+                      role="switch"
+                      aria-checked={!!highlighterColor}
+                      title={highlighterColor ? "Disable Highlighter" : "Enable Highlighter"}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                          highlighterColor ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Report a Question */}
+                <div className="flex flex-col gap-2 border-t pt-4 border-border/40">
+                  <div className="flex justify-between items-center w-full">
+                    <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">Report a Question</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsReportFormOpen(!isReportFormOpen)}
+                      className="px-2 py-0.5 rounded-md border border-[var(--exam-accent)] bg-[var(--exam-accent-light)] text-[var(--exam-accent)] hover:opacity-90 text-[10px] font-bold cursor-pointer transition-all shrink-0"
+                    >
+                      {isReportFormOpen ? "Cancel" : "Report"}
+                    </button>
+                  </div>
+                  
+                  {isReportFormOpen && (
+                    <div className="flex flex-col gap-2.5 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
+                      <div className="flex flex-col gap-1.5 relative report-dropdown-container">
+                        <span className="text-xs font-bold text-foreground">Select Question(s):</span>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
+                            className="w-full py-1.5 px-3 rounded-lg border border-border bg-card text-xs text-left text-foreground flex justify-between items-center cursor-pointer hover:bg-muted"
+                          >
+                            <span className="truncate">
+                              {reportedQuestionIds.length === 0
+                                ? "Select questions..."
+                                : `${reportedQuestionIds.length} question(s) selected`}
+                            </span>
+                            <i className="fa-solid fa-chevron-down text-muted-foreground text-[10px]" />
+                          </button>
+                          
+                          {isReportDropdownOpen && (
+                            <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto bg-card border border-border rounded-lg shadow-lg p-2 flex flex-col gap-1">
+                              {questions.map((q, idx) => {
+                                const isSelected = reportedQuestionIds.includes(q.id);
+                                return (
+                                  <label
+                                    key={q.id}
+                                    className="flex items-center gap-2 px-2 py-1 hover:bg-muted rounded text-xs cursor-pointer text-foreground"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {
+                                        setReportedQuestionIds(prev =>
+                                          prev.includes(q.id)
+                                            ? prev.filter(id => id !== q.id)
+                                            : [...prev, q.id]
+                                        );
+                                      }}
+                                      className="rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer"
+                                    />
+                                    <span>Question {idx + 1}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-bold text-foreground">Describe the issue:</span>
+                        <textarea
+                          value={reportComment}
+                          onChange={(e) => setReportComment(e.target.value)}
+                          placeholder="What is wrong with this question?"
+                          rows={3}
+                          className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={handleReportSubmit}
+                          disabled={reportedQuestionIds.length === 0 || !reportComment.trim()}
+                          className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Help Request */}
+                <div className="flex flex-col gap-2 border-t pt-4 border-border/40">
+                  <div className="flex justify-between items-center w-full">
+                    <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">Help & Support</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsHelpFormOpen(!isHelpFormOpen)}
+                      className="px-2 py-0.5 rounded-md border border-[var(--exam-accent)] bg-[var(--exam-accent-light)] text-[var(--exam-accent)] hover:opacity-90 text-[10px] font-bold cursor-pointer transition-all shrink-0"
+                    >
+                      {isHelpFormOpen ? "Cancel" : "Request"}
+                    </button>
+                  </div>
+                  
+                  {isHelpFormOpen && (
+                    <div className="flex flex-col gap-2 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
+                      <span className="text-xs font-bold text-foreground">Describe your issue:</span>
+                      <textarea
+                        value={helpComment}
+                        onChange={(e) => setHelpComment(e.target.value)}
+                        placeholder="Describe what you need help with..."
+                        rows={3}
+                        className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={handleHelpSubmit}
+                          disabled={!helpComment.trim()}
+                          className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                        >
+                          Submit
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
-
-              {/* Help Request */}
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold tracking-wider text-muted-foreground" style={{ fontVariant: 'small-caps' }}>Help & Support</label>
-                {!isHelpFormOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsHelpFormOpen(true)}
-                    className="w-full py-2 px-3 rounded-lg border font-semibold text-xs cursor-pointer transition-all bg-background border-border text-foreground hover:bg-muted flex items-center justify-between"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <i className="fa-light fa-circle-question text-muted-foreground" />
-                      Submit Help Request
-                    </span>
-                    <i className="fa-solid fa-chevron-right text-muted-foreground text-[10px]" />
-                  </button>
-                ) : (
-                  <div className="flex flex-col gap-2 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
-                    <span className="text-xs font-bold text-foreground">Describe your issue:</span>
-                    <textarea
-                      value={helpComment}
-                      onChange={(e) => setHelpComment(e.target.value)}
-                      placeholder="Describe what you need help with..."
-                      rows={3}
-                      className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsHelpFormOpen(false);
-                          setHelpComment("");
-                        }}
-                        className="px-3 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleHelpSubmit}
-                        disabled={!helpComment.trim()}
-                        className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
-                      >
-                        Submit
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
-            <button
-              onClick={() => setIsSettingsOpen(false)}
-              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all mt-2 cursor-pointer text-sm"
-            >
-              Apply Settings
-            </button>
+            {/* Sticky Footer */}
+            <div className="border-t p-6 pt-3 border-border shrink-0 bg-card sticky bottom-0 z-10">
+              <button
+                onClick={() => setIsSettingsOpen(false)}
+                className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all mt-2 cursor-pointer text-sm"
+              >
+                Apply Settings
+              </button>
+            </div>
           </div>
         </div>
       )}

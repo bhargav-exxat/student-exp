@@ -9,6 +9,8 @@ interface QuestionRendererProps {
   crossedOut: Record<number, string[]>; // Key: question.id, Value: list of crossed out option letters
   onToggleCrossOut: (questionId: number, optionLetter: string) => void;
   highlights?: Record<number, Array<{ text: string; color: string }>>;
+  onRemoveHighlight?: (text: string) => void;
+  onUpdateHighlightColor?: (text: string, color: 'yellow' | 'blue' | 'pink' | 'green') => void;
 }
 
 const getHighlightColorCode = (color: string) => {
@@ -29,9 +31,31 @@ export function QuestionRenderer({
   crossedOut,
   onToggleCrossOut,
   highlights,
+  onRemoveHighlight,
+  onUpdateHighlightColor,
 }: QuestionRendererProps) {
   const currentAnswer = answers[question.id];
   const currentCrossedOut = crossedOut[question.id] || [];
+
+  // Active highlight popover state
+  const [activeHighlight, setActiveHighlight] = React.useState<{ text: string; x: number; y: number } | null>(null);
+
+  React.useEffect(() => {
+    if (!activeHighlight) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.highlight-popover-container')) {
+        setActiveHighlight(null);
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleOutsideClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [activeHighlight]);
 
   // Active tab state for tabbed reference panels
   const [activeTab, setActiveTab] = React.useState<number>(0);
@@ -48,18 +72,74 @@ export function QuestionRenderer({
   const renderHighlightedText = (text: string) => {
     if (!text) return "";
     const questionHighlights = highlights ? (highlights[question.id] || []) : [];
+    
+    const handleHighlightClick = (e: React.MouseEvent<HTMLSpanElement>) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'MARK') {
+        setActiveHighlight({
+          text: target.innerText,
+          x: e.clientX,
+          y: e.clientY
+        });
+      }
+    };
+
     if (questionHighlights.length === 0) {
-      return text;
+      return <span onClick={handleHighlightClick} dangerouslySetInnerHTML={{ __html: text }} />;
     }
-    let html = text;
+
+    // Define helper to recursively highlight text nodes
+    const highlightTextNodes = (node: ChildNode, textToHighlight: string, colorClass: string, colorStyle: string) => {
+      if (node.nodeType === 3) { // Text Node
+        const textContent = node.textContent || "";
+        const escaped = textToHighlight.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(`(${escaped})`, 'gi');
+        
+        if (regex.test(textContent)) {
+          const parent = node.parentNode;
+          if (parent && parent.nodeName !== 'MARK') {
+            const parts = textContent.split(regex);
+            const fragment = document.createDocumentFragment();
+            
+            parts.forEach((part, index) => {
+              if (index % 2 === 1) {
+                const mark = document.createElement('mark');
+                mark.className = colorClass;
+                mark.setAttribute('style', colorStyle);
+                mark.textContent = part;
+                fragment.appendChild(mark);
+              } else if (part) {
+                fragment.appendChild(document.createTextNode(part));
+              }
+            });
+            
+            parent.replaceChild(fragment, node);
+          }
+        }
+      } else if (node.nodeType === 1 && node.nodeName !== 'MARK') { // Element Node
+        const children = Array.from(node.childNodes);
+        for (const child of children) {
+          highlightTextNodes(child, textToHighlight, colorClass, colorStyle);
+        }
+      }
+    };
+
+    // Create a temporary element to parse the HTML string
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = text;
+
+    // Sort highlights by length descending to match longer phrases first
     const sortedHighlights = [...questionHighlights].sort((a, b) => b.text.length - a.text.length);
+
     for (const hl of sortedHighlights) {
       if (!hl.text.trim()) continue;
-      const escaped = hl.text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`(${escaped})`, 'gi');
-      html = html.replace(regex, `<mark class="rounded-xs px-0.5" style="background-color: ${getHighlightColorCode(hl.color)}; color: inherit;">$1</mark>`);
+      const colorClass = "rounded-xs px-0.5 cursor-pointer hover:opacity-80 transition-opacity";
+      const colorStyle = `background-color: ${getHighlightColorCode(hl.color)}; color: inherit;`;
+      highlightTextNodes(tempDiv, hl.text, colorClass, colorStyle);
     }
-    return <span dangerouslySetInnerHTML={{ __html: html }} />;
+
+    const html = tempDiv.innerHTML;
+    return <span onClick={handleHighlightClick} dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
   // Trigger KaTeX auto-render to parse LaTeX formulas
@@ -341,7 +421,7 @@ export function QuestionRenderer({
                     <button
                       onClick={() => onToggleCrossOut(question.id, opt.letter)}
                       className={`inline-flex cursor-pointer items-center justify-center rounded-md border p-1 size-7 transition-opacity ${
-                        isCrossed ? "opacity-100 bg-destructive/10 text-destructive border-destructive/20" : "opacity-0 group-hover:opacity-100 focus:opacity-100 bg-background text-muted-foreground border-border"
+                        isCrossed ? "opacity-100 bg-destructive/10 text-destructive border-destructive/20" : "opacity-30 hover:opacity-100 focus:opacity-100 bg-background text-muted-foreground border-border"
                       }`}
                       title={isCrossed ? "Restore option" : "Cross out option"}
                       aria-label="Cross out option"
@@ -415,7 +495,7 @@ export function QuestionRenderer({
                     <button
                       onClick={() => onToggleCrossOut(question.id, opt.letter)}
                       className={`inline-flex cursor-pointer items-center justify-center rounded-md border p-1 size-7 transition-opacity ${
-                        isCrossed ? "opacity-100 bg-destructive/10 text-destructive border-destructive/20" : "opacity-0 group-hover:opacity-100 focus:opacity-100 bg-background text-muted-foreground border-border"
+                        isCrossed ? "opacity-100 bg-destructive/10 text-destructive border-destructive/20" : "opacity-30 hover:opacity-100 focus:opacity-100 bg-background text-muted-foreground border-border"
                       }`}
                       title={isCrossed ? "Restore option" : "Cross out option"}
                       aria-label="Cross out option"
@@ -677,6 +757,62 @@ export function QuestionRenderer({
           </div>
         )}
       </div>
+
+      {activeHighlight && (
+        <div
+          className="fixed z-50 bg-card border border-border shadow-2xl rounded-xl p-2 flex items-center gap-2 text-xs animate-card-enter highlight-popover-container"
+          style={{
+            top: `${activeHighlight.y}px`,
+            left: `${activeHighlight.x}px`,
+            transform: 'translate(-50%, -120%)'
+          }}
+        >
+          <div className="flex gap-1.5 items-center mr-1">
+            {(['yellow', 'blue', 'pink', 'green'] as const).map((color) => {
+              const colorBg = {
+                yellow: 'bg-yellow-200 dark:bg-yellow-500/40 border-yellow-400',
+                blue: 'bg-blue-200 dark:bg-blue-500/40 border-blue-400',
+                pink: 'bg-pink-200 dark:bg-pink-500/40 border-pink-400',
+                green: 'bg-green-200 dark:bg-green-500/40 border-green-400'
+              }[color];
+              
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => {
+                    if (onUpdateHighlightColor) {
+                      onUpdateHighlightColor(activeHighlight.text, color);
+                    }
+                    setActiveHighlight(null);
+                  }}
+                  className={`size-6 rounded-full border transition-all cursor-pointer ${colorBg} hover:scale-110`}
+                  title={`Change highlight color to ${color}`}
+                />
+              );
+            })}
+          </div>
+          <div className="h-4 w-px bg-border"></div>
+          <button
+            onClick={() => {
+              if (onRemoveHighlight) {
+                onRemoveHighlight(activeHighlight.text);
+              }
+              setActiveHighlight(null);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive text-white hover:opacity-90 rounded-lg font-bold cursor-pointer transition-all shadow-md text-[11px]"
+          >
+            <i className="fa-solid fa-trash" />
+            remove
+          </button>
+          <button
+            onClick={() => setActiveHighlight(null)}
+            className="px-2.5 py-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg font-semibold cursor-pointer transition-all text-[11px]"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
