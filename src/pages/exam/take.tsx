@@ -1085,6 +1085,73 @@ export default function ExamTakePage() {
       {/* PHASE 2: SECTION INTRO */}
       {phase === 'section-intro' && (
         <div className="flex-1 flex flex-col h-full overflow-hidden relative pb-16 bg-background">
+          {/* HEADER */}
+          <header className="border-b flex flex-col shrink-0 z-40 sticky top-0 bg-card border-border shadow-sm">
+            <div className="h-14 flex items-center justify-between px-6">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <svg viewBox="0 0 514 164" className="hidden sm:block shrink-0 h-6 text-foreground" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Exxat Logo">
+                  <path
+                    d="M73.49 155.24C114.08 155.24 146.99 122.33 146.99 81.74C146.99 41.15 114.08 8.25 73.49 8.25C32.9 8.25 0 41.15 0 81.74C0 122.33 32.9 155.24 73.49 155.24Z"
+                    fill="url(#exxat-gradient-header)"
+                  />
+                  <path
+                    d="M0.59 90.99C4.6 122.92 29.09 148.47 60.5 154.09L102.46 116.36V102.3H86.83L102.46 88.25V74.2H86.83L102.46 60.14V46.09H50.56L0.59 90.99Z"
+                    fill="#BE1E6D"
+                  />
+                  <path d="M102.47 116.36H50.56L58.68 102.3H102.47V116.36Z" fill="white" />
+                  <path d="M102.47 60.13H58.68L50.56 46.08H102.47V60.13Z" fill="white" />
+                  <path d="M102.47 88.24H66.79L70.85 81.21L66.79 74.18H102.47V88.24Z" fill="white" />
+                  <path d="M39.22 74.18H66.8L58.68 60.13H39.22V74.18Z" fill="white" />
+                  <path d="M39.22 102.3H58.68L66.8 88.24H39.22V102.3Z" fill="white" />
+
+                  <g className="fill-current">
+                    {/* E */}
+                    <path d="M196 35.76L235.63 35.81C239.71 35.81 250.8 36.09 254.42 35.65L254.41 50.88C240.77 50.8 227.13 50.8 213.49 50.88L213.5 74.35C224.55 74.34 238.41 74.73 249.19 74.27L249.2 89.72C245.21 89.42 239.53 89.58 235.43 89.59L213.5 89.63L213.48 113L256.08 112.93L256.07 128.1C251.92 127.62 239.13 127.9 234.38 127.93C221.69 128 208.64 127.75 196 127.94V35.76Z" />
+                    {/* x */}
+                    <path d="M311.84 57.11C314.84 57.1 327.11 56.86 329.38 57.21L329.61 57.85C329.33 60.38 324.21 67.34 322.51 69.92C317.65 77.19 312.85 84.49 308.1 91.83C309.12 93.85 311.98 98.15 313.27 100.2L323.96 117.11C325.9 120.18 329.18 124.46 329.55 127.99C323.66 127.75 316.57 127.94 310.59 127.95C307.78 122.8 304.08 117.69 301.1 112.6C299.2 109.35 296.93 105.77 294.71 102.75C293.77 104.89 290.7 109.57 289.36 111.72C285.99 117.17 282.58 122.58 279.12 127.96C276.6 127.91 261.82 128.24 260.67 127.62C260.25 126.01 261.8 123.53 262.7 122.21C269.33 112.52 275.11 101.26 281.98 91.83C281.56 91.33 281.15 90.8 280.77 90.26C279.99 89.13 279.24 87.93 278.49 86.76C272.55 77.6 266.26 68.63 260.48 59.37C260.19 58.91 260.44 57.65 260.54 57.11C266.33 57.05 272.13 57.07 277.92 57.16C283.45 64.94 289.73 74.44 294.84 82.5C296.78 80.01 299.25 76.07 301.02 73.39L311.84 57.11Z" />
+                    {/* x */}
+                    <path d="M331.8 57.07C337.59 57.12 343.35 57.01 349.16 57.17C351.07 59.34 353.39 63.17 355.06 65.63C358.85 71.21 362.43 77.01 366.36 82.49C370.85 75.07 378.27 64.14 383.33 57.1C385.63 57.09 399.69 56.84 400.87 57.31C401.39 58.6 399.76 61.11 399.01 62.17C392.22 71.73 386.21 82.47 379.27 91.86C383.35 97.67 387.27 104.53 391.17 110.53C393.16 113.61 400.63 124.78 400.95 127.56C399.88 128.24 384.1 127.95 382 127.95C377.12 119.68 371.36 110.9 366.22 102.72C364.99 105.11 362.37 109.02 360.85 111.44C357.4 116.92 353.99 122.43 350.62 127.97C348.24 127.9 332.9 128.28 332.17 127.57C332.12 126.75 332.07 125.83 332.45 125.1C334.5 121.17 337.29 117.06 339.66 113.31L353.19 91.8C352.42 90.71 351.63 89.5 350.9 88.36C344.71 78.72 337.87 69.39 332.08 59.51C331.71 58.88 331.75 57.78 331.8 57.07Z" />
+                    {/* a */}
+                    <path d="M430.76 55.73C443.6 55.26 459.71 58.4 463.18 73.14C464.17 77.36 463.88 82.7 463.88 87.04L463.85 105.91C463.85 112.15 463.05 112.65 469.33 113.21C469.06 117.66 469.23 123.63 469.24 128.19C461.17 128.15 448.96 129.82 446.76 119.67C444.47 122.42 443.57 123.61 440.36 125.6C433.88 129.64 423.42 129.93 416.18 128.17C410.38 126.76 405.62 123.52 402.51 118.29C400.53 114.23 400.12 109.48 400.65 105.07C402.51 89.56 418.76 87.6 431.17 85.93C435.52 85.24 440.83 84.65 444.47 82.01C447.55 79.77 447.17 76.53 444.97 73.79C440.68 68.46 429.52 68.1 424.36 72.21C421.36 74.59 420.83 77.87 420.5 81.44C414.44 81.38 408.37 81.38 402.31 81.45C402.5 79.52 402.65 77.4 403.03 75.51C405.77 61.78 418.1 56.41 430.76 55.73ZM420.85 112.9C428.03 116.95 440.99 113.87 444.94 106.31C445.85 104.56 447.93 97.68 446.7 95.97L446.34 95.91C442.71 97.49 435.91 98.87 431.8 99.34C425.34 100.07 411.45 104.69 420.85 112.9Z" />
+                    {/* t */}
+                    <path d="M479.84 35.85C485.68 35.89 491.52 35.89 497.37 35.85C497.15 42.48 497.33 50.27 497.32 56.98L514.28 56.95L514.29 72.1C508.64 72.05 502.99 72.04 497.34 72.05L497.31 93.56C497.31 97.07 496.58 108.12 499.41 110.47C502.23 112.82 510.46 112.62 514.29 112.14L514.28 123.53L514.29 127.44C511.12 127.9 507.91 128.15 504.7 128.19C479.71 128.49 479.89 117.27 479.92 96.95C479.95 88.66 479.94 80.38 479.88 72.09C479.84 35.85 479.84 35.85 479.84 35.85Z" />
+                  </g>
+
+                  <defs>
+                    <linearGradient id="exxat-gradient-header" x1="28.37" y1="134.25" x2="117.19" y2="30.9" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stop-color="#E21C79" />
+                      <stop offset="1" stop-color="#EF609D" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="w-px h-5 hidden sm:block bg-border shrink-0"></div>
+                <div className="flex flex-col min-w-0">
+                  <h1 className="font-bold text-sm truncate text-foreground leading-tight">
+                    Anatomy &amp; Physiology — Midterm Exam
+                  </h1>
+                  <span className="text-xs text-muted-foreground truncate font-medium">
+                    BIO-301-A · AY 2025-2026 · Spring Term
+                  </span>
+                </div>
+              </div>
+
+              {/* TIMER */}
+              <div className="flex items-center justify-center">
+                <div
+                  className={`px-4 py-1.5 rounded-lg border font-timer font-bold text-sm tracking-wider shadow-sm flex items-center gap-2 ${
+                    timeLeft <= 300
+                      ? "bg-destructive/10 border-destructive text-destructive animate-pulse"
+                      : "bg-muted border-border text-foreground"
+                  }`}
+                  aria-label={`Time remaining: ${formatTime(timeLeft)}`}
+                >
+                  <i className="fa-light fa-clock" />
+                  {formatTime(timeLeft)}
+                </div>
+              </div>
+            </div>
+          </header>
+
           {/* Main Area: Centered Section Intro Card */}
           <div className="flex-grow flex items-center justify-center p-6 overflow-y-auto">
             <div className="max-w-xl w-full text-center flex flex-col gap-6 animate-card-enter mx-auto">
@@ -1264,7 +1331,7 @@ export default function ExamTakePage() {
                 {/* GLOBAL REFERENCES */}
                 <button
                   onClick={() => setIsGlobalRefOpen(true)}
-                  className="flex items-center gap-1.5 px-3 h-9 rounded-lg border bg-background border-border text-foreground hover:bg-muted font-semibold text-xs cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 h-9 rounded-lg border bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground font-semibold text-xs cursor-pointer"
                 >
                   <i className="fa-light fa-file-shield text-sm" />
                   <span className="hidden md:inline">References</span>
@@ -2472,7 +2539,7 @@ export default function ExamTakePage() {
             </h4>
 
             {/* Grid Circles */}
-            <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-4">
+            <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-3">
               {(() => {
                 // Get unique sectionIds present in the questions
                 const sectionIds = Array.from(new Set(questions.map((q) => q.sectionId))).sort((a, b) => a - b);
@@ -2482,14 +2549,14 @@ export default function ExamTakePage() {
                   const sectionName = firstQ ? firstQ.sectionName : `Section ${secId}`;
                   
                   return (
-                    <div key={secId} className="flex flex-col gap-2 border-b border-border/40 last:border-b-0 pb-3 last:pb-0">
+                    <div key={secId} className="flex flex-col gap-1 border-b border-border/40 last:border-b-0 pb-2.5 last:pb-0">
                       <div className="flex justify-between items-center text-[10px] font-extrabold text-muted-foreground tracking-wider">
                         <span>{secId}: {sectionName}</span>
                         <span className="text-[9px] bg-muted/60 px-1.5 py-0.5 rounded font-mono">
                           {sectionQuestions.length} Qs
                         </span>
                       </div>
-                      <div className="grid grid-cols-5 gap-3 justify-items-center mt-1">
+                      <div className="grid grid-cols-5 gap-x-1.5 gap-y-2.5 justify-items-center mt-0.5">
                         {sectionQuestions.map((q) => {
                           const idx = questions.findIndex((x) => x.id === q.id);
                           const isCurrent = idx === currentQuestionIndex;
