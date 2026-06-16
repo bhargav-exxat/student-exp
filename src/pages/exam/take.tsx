@@ -3061,17 +3061,14 @@ export default function ExamTakePage() {
                       <strong>{getPartiallyAnsweredCount()}</strong> question{getPartiallyAnsweredCount() > 1 ? "s" : ""} partially answered
                     </>
                   )}
-                  . Use the review CTA below to inspect them.
+                  . Click on review to inspect them.
                 </span>
               </div>
             )}
 
-            <div className="p-3.5 bg-destructive/5 border border-destructive/10 rounded-xl text-xs text-destructive text-left leading-relaxed flex items-start gap-2.5">
-              <i className="fa-solid fa-triangle-exclamation mt-0.5 shrink-0" style={{ fontSize: "14px" }} />
-              <span>
-                <strong>Warning:</strong> Once submitted, you will no longer be able to modify your answers or return to this assessment.
-              </span>
-            </div>
+            <p className="text-xs text-muted-foreground px-1 leading-relaxed">
+              After submitting, you will no longer be able to modify your answers or return to this assessment.
+            </p>
 
             <div className="flex gap-3 mt-1">
               <button
@@ -3088,8 +3085,7 @@ export default function ExamTakePage() {
                 className="flex-1 border border-border bg-background hover:bg-muted font-bold py-2.5 rounded-xl transition-all cursor-pointer text-xs flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed text-foreground"
                 title={(bookmarks.size === 0 && getPartiallyAnsweredCount() === 0) ? "No flagged or partially answered questions to review" : "Review Flagged or Partially Answered Questions"}
               >
-                <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" />{" "}
-                {bookmarks.size > 0 ? "Review Flagged" : "Review Partial"}
+                <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" /> Review
               </button>
               <button
                 onClick={() => {
