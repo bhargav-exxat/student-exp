@@ -25,6 +25,7 @@ export default function ExamTakePage() {
 
   // Section intro targeting
   const [targetSectionId, setTargetSectionId] = React.useState(1);
+  const [introTargetQuestionIndex, setIntroTargetQuestionIndex] = React.useState<number | null>(null);
 
   // Modal / Sidebar States
   const [isNavigatorOpen, setIsNavigatorOpen] = React.useState(false);
@@ -541,16 +542,21 @@ export default function ExamTakePage() {
       setPasswordError('');
       setPhase('section-intro');
       setTargetSectionId(1);
+      setIntroTargetQuestionIndex(0);
     } else {
       setPasswordError('Invalid password. Please try again.');
     }
   };
 
   const handleBeginSection = () => {
-    // Locate the first question in the target section
-    const firstQIdx = questions.findIndex(q => q.sectionId === targetSectionId);
-    if (firstQIdx !== -1) {
-      setCurrentQuestionIndex(firstQIdx);
+    if (introTargetQuestionIndex !== null && introTargetQuestionIndex !== -1) {
+      setCurrentQuestionIndex(introTargetQuestionIndex);
+    } else {
+      // Locate the first question in the target section
+      const firstQIdx = questions.findIndex(q => q.sectionId === targetSectionId);
+      if (firstQIdx !== -1) {
+        setCurrentQuestionIndex(firstQIdx);
+      }
     }
     setPhase('exam');
   };
@@ -641,6 +647,7 @@ export default function ExamTakePage() {
       // Check if the next question belongs to a new section
       if (nextQ.sectionId !== currentQuestion.sectionId) {
         setTargetSectionId(nextQ.sectionId);
+        setIntroTargetQuestionIndex(currentQuestionIndex + 1);
         setPhase('section-intro');
       } else {
         setCurrentQuestionIndex((prev) => prev + 1);
@@ -653,7 +660,16 @@ export default function ExamTakePage() {
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+      const prevQIdx = currentQuestionIndex - 1;
+      const prevQ = questions[prevQIdx];
+      // Check if the previous question belongs to a different section
+      if (prevQ.sectionId !== currentQuestion.sectionId) {
+        setTargetSectionId(prevQ.sectionId);
+        setIntroTargetQuestionIndex(prevQIdx);
+        setPhase('section-intro');
+      } else {
+        setCurrentQuestionIndex(prevQIdx);
+      }
     }
   };
 
@@ -1141,7 +1157,7 @@ export default function ExamTakePage() {
                     Anatomy &amp; Physiology — Midterm Exam
                   </h1>
                   <span className="text-xs text-muted-foreground truncate font-medium">
-                    BIO-301-A · AY 2025-2026 · Spring Term
+                    Section {targetSectionId} · {activeSectionInfo.name}
                   </span>
                 </div>
               </div>
@@ -1218,6 +1234,10 @@ export default function ExamTakePage() {
                       <button
                         onClick={() => {
                           setTargetSectionId(secId);
+                          const firstQIdx = questions.findIndex(q => q.sectionId === secId);
+                          if (firstQIdx !== -1) {
+                            setIntroTargetQuestionIndex(firstQIdx);
+                          }
                         }}
                         className={`text-left p-3.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border ${
                           isCurrent
@@ -1248,7 +1268,12 @@ export default function ExamTakePage() {
                 if (targetSectionId === 1) {
                   setPhase('instructions');
                 } else {
-                  setTargetSectionId(prev => prev - 1);
+                  const prevSecId = targetSectionId - 1;
+                  setTargetSectionId(prevSecId);
+                  const firstQIdx = questions.findIndex(q => q.sectionId === prevSecId);
+                  if (firstQIdx !== -1) {
+                    setIntroTargetQuestionIndex(firstQIdx);
+                  }
                 }
               }}
               className="flex items-center gap-2 px-4 h-10 border rounded-lg bg-background border-border text-foreground hover:bg-muted font-semibold text-sm cursor-pointer"
@@ -2565,7 +2590,21 @@ export default function ExamTakePage() {
                   return (
                     <div key={secId} className="flex flex-col gap-1 border-b border-border/40 last:border-b-0 pb-2.5 last:pb-0">
                       <div className="flex justify-between items-center text-[10px] font-extrabold text-muted-foreground tracking-wider">
-                        <span>{secId}: {sectionName}</span>
+                        <button
+                          onClick={() => {
+                            setTargetSectionId(secId);
+                            const firstQIdx = questions.findIndex(q => q.sectionId === secId);
+                            if (firstQIdx !== -1) {
+                              setIntroTargetQuestionIndex(firstQIdx);
+                            }
+                            setPhase('section-intro');
+                            setIsNavigatorOpen(false);
+                          }}
+                          className="hover:text-[var(--exam-accent)] transition-all cursor-pointer font-extrabold text-left flex items-center gap-1"
+                        >
+                          <i className="fa-light fa-layer-group text-[9px]" />
+                          <span>{secId}: {sectionName}</span>
+                        </button>
                         <span className="text-[9px] bg-muted/60 px-1.5 py-0.5 rounded font-mono">
                           {sectionQuestions.length} Qs
                         </span>
