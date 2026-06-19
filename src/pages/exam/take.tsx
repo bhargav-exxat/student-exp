@@ -1268,11 +1268,14 @@ export default function ExamTakePage() {
                 if (targetSectionId === 1) {
                   setPhase('instructions');
                 } else {
-                  const prevSecId = targetSectionId - 1;
-                  setTargetSectionId(prevSecId);
-                  const firstQIdx = questions.findIndex(q => q.sectionId === prevSecId);
-                  if (firstQIdx !== -1) {
-                    setIntroTargetQuestionIndex(firstQIdx);
+                  const prevSectionQuestions = questions.filter(q => q.sectionId === targetSectionId - 1);
+                  if (prevSectionQuestions.length > 0) {
+                    const lastQOfPrevSec = prevSectionQuestions[prevSectionQuestions.length - 1];
+                    const lastQIdx = questions.findIndex(q => q.id === lastQOfPrevSec.id);
+                    if (lastQIdx !== -1) {
+                      setCurrentQuestionIndex(lastQIdx);
+                      setPhase('exam');
+                    }
                   }
                 }
               }}
@@ -1469,9 +1472,12 @@ export default function ExamTakePage() {
                 }
                 
                 return (
-                  <div
+                  <button
                     key={q.id}
-                    className={`h-full flex-grow rounded-xs transition-all duration-300 ${chunkColor}`}
+                    onClick={() => {
+                      setCurrentQuestionIndex(idx);
+                    }}
+                    className={`h-full flex-grow rounded-xs transition-all duration-300 ${chunkColor} cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-[var(--exam-accent)]`}
                     title={`Question ${idx + 1}: ${
                       isFlagged
                         ? "Flagged for Review"
