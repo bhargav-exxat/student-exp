@@ -1455,20 +1455,35 @@ export default function ExamTakePage() {
             </div>
 
             {/* PROGRESS BAR */}
-            <div className="w-full h-1 bg-muted relative">
-              <div
-                className="transition-all duration-300 h-full bg-[var(--exam-accent)]"
-                style={{ width: `${progressPercent}%` }}
-              ></div>
-              
-              {/* Section indicators/tick marks */}
-              <div className="absolute inset-0 flex pointer-events-none">
-                <div style={{ left: "59.2%" }} className="absolute top-0 bottom-0 w-0.5 bg-card z-10"></div> {/* Sec 1 ends */}
-                <div style={{ left: "74.0%" }} className="absolute top-0 bottom-0 w-0.5 bg-card z-10"></div> {/* Sec 2 ends */}
-                <div style={{ left: "81.4%" }} className="absolute top-0 bottom-0 w-0.5 bg-card z-10"></div> {/* Sec 3 ends */}
-                <div style={{ left: "88.8%" }} className="absolute top-0 bottom-0 w-0.5 bg-card z-10"></div> {/* Sec 4 ends */}
-                <div style={{ left: "92.5%" }} className="absolute top-0 bottom-0 w-0.5 bg-card z-10"></div> {/* Sec 5 ends */}
-              </div>
+            <div className="w-full h-1.5 bg-card flex gap-0.5 px-6 pb-0.5">
+              {questions.map((q, idx) => {
+                const isAnswered = isQuestionAnswered(q);
+                const isPartiallyAnswered = isQuestionPartiallyAnswered(q);
+                const isFlagged = bookmarks.has(q.id);
+                
+                let chunkColor = "bg-muted"; // unanswered (grey)
+                if (isFlagged || isPartiallyAnswered) {
+                  chunkColor = "bg-amber-400 dark:bg-amber-500"; // yellow/amber
+                } else if (isAnswered) {
+                  chunkColor = "bg-emerald-500 dark:bg-emerald-600"; // green
+                }
+                
+                return (
+                  <div
+                    key={q.id}
+                    className={`h-full flex-grow rounded-xs transition-all duration-300 ${chunkColor}`}
+                    title={`Question ${idx + 1}: ${
+                      isFlagged
+                        ? "Flagged for Review"
+                        : isPartiallyAnswered
+                        ? "Partially Answered"
+                        : isAnswered
+                        ? "Answered"
+                        : "Unanswered"
+                    }`}
+                  />
+                );
+              })}
             </div>
           </header>
 
