@@ -1457,7 +1457,8 @@ export default function ExamTakePage() {
               </div>
             </div>
 
-            {/* PROGRESS BAR */}
+            {/* PROGRESS BAR (Hidden for now) */}
+            {/* 
             <div className="w-full h-1.5 bg-card flex gap-0.5 px-6 pb-0.5">
               {questions.map((q, idx) => {
                 const isAnswered = isQuestionAnswered(q);
@@ -1491,6 +1492,7 @@ export default function ExamTakePage() {
                 );
               })}
             </div>
+            */}
           </header>
 
           {/* QUESTION PANEL */}
@@ -2941,6 +2943,16 @@ export default function ExamTakePage() {
                             <span className="truncate">
                               {reportedQuestionIds.length === 0
                                 ? "Select questions..."
+                                : reportedQuestionIds.length === 1
+                                ? (() => {
+                                    const qId = reportedQuestionIds[0];
+                                    const idx = questions.findIndex(q => q.id === qId);
+                                    if (idx !== -1) {
+                                      const q = questions[idx];
+                                      return `Q${idx + 1}. ${q.text.length > 50 ? q.text.slice(0, 50) + "..." : q.text}`;
+                                    }
+                                    return "Select questions...";
+                                  })()
                                 : reportedQuestionIds
                                     .map(id => questions.findIndex(q => q.id === id) + 1)
                                     .filter(n => n > 0)
@@ -2958,7 +2970,7 @@ export default function ExamTakePage() {
                                 return (
                                   <label
                                     key={q.id}
-                                    className="flex items-center gap-2 px-2 py-1 hover:bg-muted rounded text-xs cursor-pointer text-foreground"
+                                    className="flex items-center gap-2 px-2 py-1 hover:bg-muted rounded text-xs cursor-pointer text-foreground min-w-0"
                                   >
                                     <input
                                       type="checkbox"
@@ -2970,9 +2982,11 @@ export default function ExamTakePage() {
                                             : [...prev, q.id]
                                         );
                                       }}
-                                      className="rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer"
+                                      className="rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer shrink-0"
                                     />
-                                    <span>Question {idx + 1}</span>
+                                    <span className="truncate" title={`${idx + 1}. ${q.text}`}>
+                                      {idx + 1}. {q.text.length > 60 ? q.text.slice(0, 60) + "..." : q.text}
+                                    </span>
                                   </label>
                                 );
                               })}
