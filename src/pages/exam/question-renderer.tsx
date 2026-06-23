@@ -400,7 +400,7 @@ export function QuestionRenderer({
                           : "bg-muted text-muted-foreground border-border"
                       }`}
                     >
-                    <span className="text-[12px] font-bold text-foreground leading-none">{opt.letter}</span>
+                    <span className={`text-[12px] font-bold leading-none ${isSelected ? "text-white" : "text-foreground"}`}>{opt.letter}</span>
                     </span>
                     <div className="flex-grow flex flex-col items-start gap-1 py-1 w-full overflow-hidden">
                       {opt.text.includes('<math') || opt.text.includes('</math>') ? (
@@ -474,7 +474,7 @@ export function QuestionRenderer({
                           : "bg-muted text-muted-foreground border-border"
                       }`}
                     >
-                    <span className="text-[12px] font-bold text-foreground leading-none">{opt.letter}</span>
+                    <span className={`text-[12px] font-bold leading-none ${isSelected ? "text-white" : "text-foreground"}`}>{opt.letter}</span>
                     </span>
                     <div className="flex-grow flex flex-col items-start gap-1 py-1 w-full overflow-hidden">
                       {opt.text.includes('<math') || opt.text.includes('</math>') ? (
@@ -579,34 +579,7 @@ export function QuestionRenderer({
                 rows={10}
                 className="w-full p-4 rounded-xl border-2 text-[1em] bg-card text-foreground border-border focus:border-[var(--exam-accent)] focus:outline-none resize-y"
               />
-              <button
-                onClick={() => setIsDictating(!isDictating)}
-                className={`absolute right-3 bottom-3 p-2 rounded-full border transition-all ${
-                  isDictating
-                    ? "bg-destructive text-destructive-foreground border-transparent animate-pulse"
-                    : "bg-background text-muted-foreground border-border hover:bg-muted"
-                }`}
-                title="Use dictation"
-              >
-                <i className="fa-light fa-microphone" style={{ fontSize: "16px" }} />
-              </button>
             </div>
-            
-            {isDictating && (
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border border-border animate-card-enter">
-                <span className="text-xs font-bold text-destructive flex items-center gap-1.5 shrink-0">
-                  <span className="w-2.5 h-2.5 rounded-full bg-destructive animate-ping"></span>
-                  Listening
-                </span>
-                <div className="flex-1 h-6 flex items-center justify-center gap-0.5">
-                  <span className="w-0.5 h-3 bg-destructive rounded animate-pulse"></span>
-                  <span className="w-0.5 h-5 bg-destructive rounded animate-pulse delay-75"></span>
-                  <span className="w-0.5 h-2 bg-destructive rounded animate-pulse delay-100"></span>
-                  <span className="w-0.5 h-6 bg-destructive rounded animate-pulse delay-150"></span>
-                  <span className="w-0.5 h-4 bg-destructive rounded animate-pulse delay-200"></span>
-                </div>
-              </div>
-            )}
 
             <div className="flex justify-between items-center text-xs text-muted-foreground px-1">
               <span>Limit: 500 words</span>
@@ -618,6 +591,7 @@ export function QuestionRenderer({
 
       case "hotspot": {
         const hotspots = question.hotspots || [];
+        const optionKeys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
         return (
           <div className="flex flex-col items-center">
             <div className="relative inline-block border rounded-xl overflow-hidden shadow-sm bg-muted border-border">
@@ -627,8 +601,9 @@ export function QuestionRenderer({
                 className="max-w-full h-auto block"
                 style={{ maxHeight: "450px" }}
               />
-              {hotspots.map((spot) => {
+              {hotspots.map((spot, idx) => {
                 const isSelected = currentAnswer === spot.label;
+                const spotLetter = optionKeys[idx] || '';
                 return (
                   <button
                     key={spot.label}
@@ -636,7 +611,7 @@ export function QuestionRenderer({
                     className={`absolute rounded-full border-2 transition-all flex items-center justify-center p-0 cursor-pointer ${
                       isSelected
                         ? "bg-[var(--exam-accent)] border-transparent text-white"
-                        : "bg-white/80 hover:bg-white border-[var(--exam-accent)] text-muted-foreground shadow-sm"
+                        : "bg-white hover:bg-muted border-[var(--exam-accent)] text-muted-foreground shadow-sm"
                     }`}
                     style={{
                       left: spot.left,
@@ -645,6 +620,7 @@ export function QuestionRenderer({
                       height: "1.8em",
                       marginLeft: "-0.9em",
                       marginTop: "-0.9em",
+                      zIndex: 10,
                     }}
                     title={`Select ${spot.label}`}
                     aria-label={`Select ${spot.label}`}
@@ -652,17 +628,12 @@ export function QuestionRenderer({
                     {isSelected ? (
                       <i className="fa-solid fa-check" style={{ fontSize: "10px" }} />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--exam-accent)]"></span>
+                      <span className="text-[9px] font-extrabold text-[var(--exam-accent)]">{spotLetter}</span>
                     )}
                   </button>
                 );
               })}
             </div>
-            {currentAnswer && (
-              <div className="mt-4 text-sm font-semibold px-4 py-2 bg-[var(--exam-accent-light)] border border-[var(--exam-accent-border)] text-foreground rounded-lg">
-                Selected: <span className="text-[var(--exam-accent)]">{currentAnswer}</span>
-              </div>
-            )}
           </div>
         );
       }
@@ -722,13 +693,18 @@ export function QuestionRenderer({
         {/* Left Side: Question content (or full-width if no reference) */}
         <div className={`${hasReference ? "md:w-1/2" : "w-full"} min-h-0 overflow-y-auto rounded-2xl border shadow-sm flex flex-col bg-card border-border`}>
           <div className="p-8 flex flex-col gap-6 flex-1">
-            <div className="flex items-start gap-3">
-              <span className="font-bold text-[1.2em] text-foreground mt-0.5 shrink-0">
-                {questionNumber || question.id}.
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-grow">
+                <span className="font-bold text-[1.2em] text-foreground mt-0.5 shrink-0">
+                  {questionNumber || question.id}.
+                </span>
+                <h2 className="text-[1.125em] font-semibold leading-relaxed text-foreground">
+                  {renderHighlightedText(question.text)}
+                </h2>
+              </div>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-muted text-muted-foreground border border-border/80 select-none shrink-0 mt-1">
+                {question.points ?? 2} points
               </span>
-              <h2 className="text-[1.125em] font-semibold leading-relaxed flex-1 text-foreground">
-                {renderHighlightedText(question.text)}
-              </h2>
             </div>
 
             <div className="flex-1 flex flex-col justify-start">

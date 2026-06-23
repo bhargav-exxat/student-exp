@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "exportedAt": "2026-06-16T08:15:21.269Z",
+  "exportedAt": "2026-06-23T14:13:42.468Z",
   "catalog": [
     {
       "id": "tenant-assessment",
@@ -82,8 +82,81 @@
       ],
       "defaultPath": "/assessment/dashboard",
       "source": "user",
-      "createdAt": "2026-06-10T09:50:12.594Z",
-      "updatedAt": "2026-06-16T08:15:14.572Z",
+      "createdAt": "2026-06-05T10:54:26.859Z",
+      "updatedAt": "2026-06-23T14:13:40.955Z",
+      "deletedAt": null,
+      "extensions": {}
+    },
+    {
+      "id": "exxat-em",
+      "slug": "em",
+      "label": "Exxat EM",
+      "brandPrefix": "Exxat",
+      "brandSuffix": "Exam Management",
+      "brandColor": "oklch(0.5784 0.156 250)",
+      "scope": "school-program",
+      "nav": [
+        {
+          "key": "course-offerings",
+          "title": "Course Offerings",
+          "url": "/em/course-offerings",
+          "iconClass": "fa-light fa-book-open",
+          "iconActiveClass": "fa-solid fa-book-open"
+        },
+        {
+          "key": "assessments",
+          "title": "Assessments",
+          "url": "/em/assessments",
+          "iconClass": "fa-light fa-file-signature",
+          "iconActiveClass": "fa-solid fa-file-signature"
+        },
+        {
+          "key": "submissions",
+          "title": "Submissions",
+          "url": "/em/submissions",
+          "iconClass": "fa-light fa-file-import",
+          "iconActiveClass": "fa-solid fa-file-import"
+        },
+        {
+          "key": "question-bank",
+          "title": "Question Bank",
+          "url": "/em/question-bank",
+          "iconClass": "fa-light fa-books",
+          "iconActiveClass": "fa-solid fa-books"
+        },
+        {
+          "key": "students",
+          "title": "Students",
+          "url": "/em/students",
+          "iconClass": "fa-light fa-graduation-cap",
+          "iconActiveClass": "fa-solid fa-graduation-cap"
+        },
+        {
+          "key": "faculty",
+          "title": "Faculty",
+          "url": "/em/faculty",
+          "iconClass": "fa-light fa-user-group",
+          "iconActiveClass": "fa-solid fa-user-group"
+        },
+        {
+          "key": "reports",
+          "title": "Reports",
+          "url": "/em/reports",
+          "iconClass": "fa-light fa-chart-line",
+          "iconActiveClass": "fa-solid fa-chart-line"
+        },
+        {
+          "key": "settings",
+          "title": "Settings",
+          "url": "/em/settings/access-controls",
+          "iconClass": "fa-light fa-gear",
+          "iconActiveClass": "fa-solid fa-gear"
+        }
+      ],
+      "defaultPath": "/em/dashboard",
+      "source": "code",
+      "createdAt": "2026-06-17T08:38:44.680Z",
+      "updatedAt": "2026-06-23T14:13:40.955Z",
       "deletedAt": null,
       "extensions": {}
     }

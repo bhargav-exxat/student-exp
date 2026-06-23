@@ -35,6 +35,7 @@ export interface Question {
   sectionTitle: string; // e.g. "Section 1 of 6"
   type: 'mcq-single' | 'mcq-multiple' | 'fill-blank' | 'essay' | 'hotspot' | 'match' | 'dropdown';
   text: string;
+  points?: number;
   options?: QuestionOption[];
   textWithPlaceholders?: string;
   blanks?: QuestionBlank[];

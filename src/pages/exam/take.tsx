@@ -73,6 +73,7 @@ export default function ExamTakePage() {
   const [adminAllowDownloadKey, setAdminAllowDownloadKey] = React.useState(true);
   const [adminDisplayKeyAndChoices, setAdminDisplayKeyAndChoices] = React.useState(true);
   const [adminDisplayRationale, setAdminDisplayRationale] = React.useState(true);
+  const [adminShowSectionPerformance, setAdminShowSectionPerformance] = React.useState(true);
   const [adminSectionVisibility, setAdminSectionVisibility] = React.useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -81,7 +82,9 @@ export default function ExamTakePage() {
     5: true,
     6: true
   });
-  const [adminShowSectionPerformance, setAdminShowSectionPerformance] = React.useState(true);
+  const [adminCalculator, setAdminCalculator] = React.useState<'On - Scientific' | 'On - basic' | 'Off'>('On - Scientific');
+  const [adminHighlighting, setAdminHighlighting] = React.useState<'On' | 'Off'>('On');
+  const [adminBackwardNavigation, setAdminBackwardNavigation] = React.useState<'On - section level' | 'On - Exam level' | 'Off'>('On - Exam level');
   const [isAdminPanelOpen, setIsAdminPanelOpen] = React.useState(true);
   const [keyFilter, setKeyFilter] = React.useState<'all' | 'correct' | 'incorrect' | 'unanswered'>('all');
 
@@ -281,6 +284,22 @@ export default function ExamTakePage() {
       } catch (err) {
         setCalcResult('Error');
       }
+    } else if (['sin', 'cos', 'tan', 'sqrt', 'log', 'ln'].includes(val)) {
+      try {
+        const currentVal = parseFloat(calcResult || calcInput || '0');
+        let res = 0;
+        if (val === 'sin') res = Math.sin((currentVal * Math.PI) / 180);
+        else if (val === 'cos') res = Math.cos((currentVal * Math.PI) / 180);
+        else if (val === 'tan') res = Math.tan((currentVal * Math.PI) / 180);
+        else if (val === 'sqrt') res = Math.sqrt(currentVal);
+        else if (val === 'log') res = Math.log10(currentVal);
+        else if (val === 'ln') res = Math.log(currentVal);
+        
+        setCalcInput(`${val}(${currentVal})`);
+        setCalcResult(String(Number(res.toFixed(6))));
+      } catch (err) {
+        setCalcResult('Error');
+      }
     } else {
       setCalcInput((prev) => prev + val);
     }
@@ -353,6 +372,13 @@ export default function ExamTakePage() {
     return () => clearInterval(timer);
   }, [phase]);
 
+  // Synchronize targetSectionId with current question's section during active exam
+  React.useEffect(() => {
+    if (phase === 'exam' && currentQuestion) {
+      setTargetSectionId(currentQuestion.sectionId);
+    }
+  }, [currentQuestionIndex, phase]);
+
   // Keyboard Shortcuts Hook
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -383,7 +409,7 @@ export default function ExamTakePage() {
       }
 
       // 3. Calculator: ALT + C or Option + C
-      if (e.altKey && (e.key.toLowerCase() === 'c' || e.code === 'KeyC')) {
+      if (e.altKey && (e.key.toLowerCase() === 'c' || e.code === 'KeyC') && adminCalculator !== 'Off') {
         e.preventDefault();
         setShowCalculator((prev) => !prev);
         return;
@@ -397,7 +423,7 @@ export default function ExamTakePage() {
       }
 
       // 5. Backward navigation: ALT + P or Option + P
-      if (e.altKey && (e.key.toLowerCase() === 'p' || e.code === 'KeyP')) {
+      if (e.altKey && (e.key.toLowerCase() === 'p' || e.code === 'KeyP') && adminBackwardNavigation !== 'Off') {
         e.preventDefault();
         handlePrevious();
         return;
@@ -446,7 +472,7 @@ export default function ExamTakePage() {
       }
 
       // 8. Select options or focus matching/blank dropdowns via A/B/C/D/E keys
-      const optionKeys = ['a', 'b', 'c', 'd', 'e'];
+      const optionKeys = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       if (optionKeys.includes(e.key.toLowerCase()) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // Only run if the user is not currently typing in a text field
         const activeEl = document.activeElement;
@@ -494,6 +520,18 @@ export default function ExamTakePage() {
           return;
         }
 
+        if (currentQuestion.type === 'hotspot') {
+          e.preventDefault();
+          const hotspots = currentQuestion.hotspots || [];
+          const optionIndex = e.key.toLowerCase().charCodeAt(0) - 97;
+          if (optionIndex < hotspots.length) {
+            const spot = hotspots[optionIndex];
+            const isSelected = answers[currentQuestion.id] === spot.label;
+            handleAnswerChange(currentQuestion.id, isSelected ? "" : spot.label);
+          }
+          return;
+        }
+
         if (currentQuestion.type === 'match') {
           e.preventDefault();
           const matches = currentQuestion.matches || [];
@@ -528,7 +566,19 @@ export default function ExamTakePage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [phase, currentQuestionIndex, answers, crossedOut, bookmarks, showCalculator, targetSectionId, highlighterColor]);
+  }, [phase, currentQuestionIndex, answers, crossedOut, bookmarks, showCalculator, targetSectionId, highlighterColor, adminCalculator, adminHighlighting]);
+
+  React.useEffect(() => {
+    if (adminCalculator === 'Off') {
+      setShowCalculator(false);
+    }
+  }, [adminCalculator]);
+
+  React.useEffect(() => {
+    if (adminHighlighting === 'Off') {
+      setHighlighterColor(null);
+    }
+  }, [adminHighlighting]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -659,11 +709,15 @@ export default function ExamTakePage() {
   };
 
   const handlePrevious = () => {
+    if (adminBackwardNavigation === 'Off') return;
     if (currentQuestionIndex > 0) {
       const prevQIdx = currentQuestionIndex - 1;
       const prevQ = questions[prevQIdx];
       // Check if the previous question belongs to a different section
       if (prevQ.sectionId !== currentQuestion.sectionId) {
+        if (adminBackwardNavigation === 'On - section level') {
+          return;
+        }
         setTargetSectionId(prevQ.sectionId);
         setIntroTargetQuestionIndex(prevQIdx);
         setPhase('section-intro');
@@ -962,10 +1016,10 @@ export default function ExamTakePage() {
               <div className="md:col-span-2 flex flex-col gap-6">
                 <div>
                   <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-1">
-                    Instructions
+                    Anatomy &amp; Physiology — Midterm Exam
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Read the following carefully before you begin.
+                    Read the below instructions carefully before you start the exam
                   </p>
                 </div>
 
@@ -1026,8 +1080,27 @@ export default function ExamTakePage() {
                   </div>
                 </div>
 
-                {/* 2. Exam details */}
+                {/* 2. Exam settings */}
                 <div className="flex flex-col gap-2 text-[10px] text-muted-foreground border-b pb-4 border-border/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 block">Exam settings</span>
+                  <div className="flex justify-between items-center">
+                    <span>Calculator</span>
+                    <span className="font-semibold text-foreground/80 text-right">
+                      {adminCalculator === 'On - Scientific' ? 'Scientific' : adminCalculator === 'On - basic' ? 'Basic' : 'Off'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Highlighting</span>
+                    <span className="font-semibold text-foreground/80 text-right">
+                      {adminHighlighting === 'On' ? 'Allowed' : 'Off'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Backward navigation</span>
+                    <span className="font-semibold text-foreground/80 text-right">
+                      {adminBackwardNavigation === 'On - section level' ? 'Allowed - Section level' : adminBackwardNavigation === 'On - Exam level' ? 'Allowed - Exam level' : 'Off'}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span>Results</span>
                     <span className="font-semibold text-foreground/80 text-right">Released after instructor review</span>
@@ -1053,7 +1126,7 @@ export default function ExamTakePage() {
                 {/* 3. Password */}
                 <div className="flex flex-col gap-1.5 text-left px-0.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Assessment password
+                    Exam password
                   </label>
                   <div className="relative">
                     <input
@@ -1072,7 +1145,7 @@ export default function ExamTakePage() {
                           }
                         }
                       }}
-                      placeholder="Enter assessment password"
+                      placeholder="Enter exam password"
                       className="w-full px-3 py-2.5 rounded-xl border bg-background border-border text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[var(--exam-accent)]/20 focus:border-[var(--exam-accent)] font-semibold transition-all"
                     />
                   </div>
@@ -1227,11 +1300,13 @@ export default function ExamTakePage() {
                   const answeredCount = sectionQuestions.filter(isQuestionAnswered).length;
                   const unansweredCount = totalCount - answeredCount;
                   const flaggedCount = sectionQuestions.filter((q) => bookmarks.has(q.id)).length;
+                  const isSectionDisabled = (adminBackwardNavigation === 'Off' || adminBackwardNavigation === 'On - section level') && secId < targetSectionId;
 
                   return (
                     <React.Fragment key={secId}>
                       {index > 0 && <div className="h-px bg-border/50 my-1.5 mx-2" />}
                       <button
+                        disabled={isSectionDisabled}
                         onClick={() => {
                           setTargetSectionId(secId);
                           const firstQIdx = questions.findIndex(q => q.sectionId === secId);
@@ -1239,7 +1314,7 @@ export default function ExamTakePage() {
                             setIntroTargetQuestionIndex(firstQIdx);
                           }
                         }}
-                        className={`text-left p-3.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border ${
+                        className={`text-left p-3.5 rounded-xl transition-all cursor-pointer flex flex-col gap-1.5 border disabled:opacity-40 disabled:pointer-events-none ${
                           isCurrent
                             ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent-border)] text-[var(--exam-accent)] shadow-xs"
                             : "border-transparent bg-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -1264,10 +1339,13 @@ export default function ExamTakePage() {
           {/* FOOTER */}
           <footer className="absolute bottom-0 left-0 right-0 h-16 border-t flex items-center justify-between px-6 bg-card border-border shadow-lg z-30">
             <button
+              disabled={(targetSectionId > 1 && (adminBackwardNavigation === 'Off' || adminBackwardNavigation === 'On - section level')) || (targetSectionId === 1 && adminBackwardNavigation === 'Off')}
               onClick={() => {
                 if (targetSectionId === 1) {
+                  if (adminBackwardNavigation === 'Off') return;
                   setPhase('instructions');
                 } else {
+                  if (adminBackwardNavigation === 'Off' || adminBackwardNavigation === 'On - section level') return;
                   const prevSectionQuestions = questions.filter(q => q.sectionId === targetSectionId - 1);
                   if (prevSectionQuestions.length > 0) {
                     const lastQOfPrevSec = prevSectionQuestions[prevSectionQuestions.length - 1];
@@ -1279,7 +1357,7 @@ export default function ExamTakePage() {
                   }
                 }
               }}
-              className="flex items-center gap-2 px-4 h-10 border rounded-lg bg-background border-border text-foreground hover:bg-muted font-semibold text-sm cursor-pointer"
+              className="flex items-center gap-2 px-4 h-10 border rounded-lg bg-background border-border text-foreground hover:bg-muted font-semibold text-sm cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
             >
               <i className="fa-light fa-arrow-left" />
               <span>Previous</span>
@@ -1380,17 +1458,19 @@ export default function ExamTakePage() {
                 </button>
 
                 {/* CALCULATOR */}
-                <button
-                  onClick={() => setShowCalculator(!showCalculator)}
-                  className={`flex items-center justify-center border rounded-lg size-9 cursor-pointer transition-all ${
-                    showCalculator
-                      ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
-                      : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                  title="On-Screen Calculator"
-                >
-                  <i className="fa-light fa-calculator" style={{ fontSize: "16px" }} />
-                </button>
+                {adminCalculator !== 'Off' && (
+                  <button
+                    onClick={() => setShowCalculator(!showCalculator)}
+                    className={`flex items-center justify-center border rounded-lg size-9 cursor-pointer transition-all ${
+                      showCalculator
+                        ? "bg-[var(--exam-accent-light)] border-[var(--exam-accent)] text-[var(--exam-accent)]"
+                        : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                    title="On-Screen Calculator"
+                  >
+                    <i className="fa-light fa-calculator" style={{ fontSize: "16px" }} />
+                  </button>
+                )}
 
                 {/* KEYBOARD */}
                 <button
@@ -1419,23 +1499,25 @@ export default function ExamTakePage() {
                 </button>
 
                 {/* HIGHLIGHTER CTA */}
-                <button
-                  onClick={() => {
-                    setHighlighterColor((prev) => (prev ? null : 'yellow'));
-                  }}
-                  className={`flex items-center gap-1.5 px-3 h-9 rounded-lg border font-semibold text-xs cursor-pointer transition-all ${
-                    highlighterColor
-                      ? "bg-[var(--state-flagged-bg)] border-[var(--state-flagged-border)] text-[var(--state-flagged-text)]"
-                      : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                  title="Highlighter Tool"
-                >
-                  <i className="fa-solid fa-highlighter" />
-                  <span className="hidden sm:inline">Highlight</span>
-                  {highlighterColor && (
-                    <span className="size-2 rounded-full animate-pulse" style={{ backgroundColor: getHighlightColorCode(highlighterColor) }} />
-                  )}
-                </button>
+                {adminHighlighting !== 'Off' && (
+                  <button
+                    onClick={() => {
+                      setHighlighterColor((prev) => (prev ? null : 'yellow'));
+                    }}
+                    className={`flex items-center gap-1.5 px-3 h-9 rounded-lg border font-semibold text-xs cursor-pointer transition-all ${
+                      highlighterColor
+                        ? "bg-[var(--state-flagged-bg)] border-[var(--state-flagged-border)] text-[var(--state-flagged-text)]"
+                        : "bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                    title="Highlighter Tool"
+                  >
+                    <i className="fa-solid fa-highlighter" />
+                    <span className="hidden sm:inline">Highlight</span>
+                    {highlighterColor && (
+                      <span className="size-2 rounded-full animate-pulse" style={{ backgroundColor: getHighlightColorCode(highlighterColor) }} />
+                    )}
+                  </button>
+                )}
 
                 {/* QUESTIONS DRAWER TRIGGER */}
                 <button
@@ -1521,16 +1603,43 @@ export default function ExamTakePage() {
           <footer className="shrink-0 h-16 border-t flex items-center justify-between px-6 bg-card border-border shadow-lg z-30">
             <button
               onClick={handlePrevious}
-              disabled={currentQuestionIndex === 0}
+              disabled={currentQuestionIndex === 0 || adminBackwardNavigation === 'Off' || (adminBackwardNavigation === 'On - section level' && currentQuestionIndex > 0 && questions[currentQuestionIndex - 1].sectionId !== currentQuestion.sectionId)}
               className="flex items-center gap-2 px-4 h-10 border rounded-lg bg-background border-border text-foreground hover:bg-muted disabled:opacity-40 disabled:pointer-events-none font-semibold text-sm cursor-pointer"
             >
               <i className="fa-light fa-arrow-left" />
               <span>Previous</span>
             </button>
 
-            <span className="text-sm font-semibold text-muted-foreground">
-              Question {currentQuestionIndex + 1} <span className="text-muted-foreground/60">of {questions.length}</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-muted-foreground mr-2">
+                Question {currentQuestionIndex + 1} <span className="text-muted-foreground/60">of {questions.length}</span>
+              </span>
+              
+              <div className="h-4 w-[1px] bg-border mr-1" />
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setReportedQuestionIds([currentQuestion.id]);
+                  setIsReportFormOpen(true);
+                }}
+                className="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex items-center justify-center cursor-pointer"
+                title="Report a Question"
+              >
+                <i className="fa-light fa-circle-exclamation text-amber-500/85 hover:text-amber-500 text-base" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsHelpFormOpen(true);
+                }}
+                className="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-all flex items-center justify-center cursor-pointer"
+                title="Help & Support"
+              >
+                <i className="fa-light fa-circle-question text-base" />
+              </button>
+            </div>
 
             <button
               onClick={handleNext}
@@ -1546,11 +1655,11 @@ export default function ExamTakePage() {
       {/* PHASE 4: SUBMITTED PORTAL */}
       {phase === 'submitted' && (() => {
         // Calculate scores
-        const objCorrect = questions.filter(q => q.type !== 'essay' && isQuestionCorrect(q)).length;
-        const subjectiveScore = adminGradingStatus === 'complete' ? 1.8 : 0;
+        const objCorrect = questions.filter(q => q.type !== 'essay' && isQuestionCorrect(q)).reduce((sum, q) => sum + (q.points ?? 2), 0);
+        const objectiveMaxPoints = questions.filter(q => q.type !== 'essay').reduce((sum, q) => sum + (q.points ?? 2), 0);
+        const subjectiveMaxPoints = questions.filter(q => q.type === 'essay').reduce((sum, q) => sum + (q.points ?? 2), 0);
+        const subjectiveScore = adminGradingStatus === 'complete' ? (0.9 * subjectiveMaxPoints) : 0;
         const totalPointsEarned = objCorrect + subjectiveScore;
-        const objectiveMaxPoints = questions.filter(q => q.type !== 'essay').length;
-        const subjectiveMaxPoints = 2.0; // Essay section has 2 questions with total 2.0 pts
         const totalMaxPoints = objectiveMaxPoints + subjectiveMaxPoints;
         
         const rawObjectivePercent = (objCorrect / objectiveMaxPoints) * 100;
@@ -1559,24 +1668,25 @@ export default function ExamTakePage() {
         // Section details helper
         const getSectionStats = (secId: number) => {
           const secQ = questions.filter(q => q.sectionId === secId);
-          const total = secQ.length;
+          const totalPoints = secQ.reduce((sum, q) => sum + (q.points ?? 2), 0);
           
           if (secId === 4) { // Subjective section
             if (adminGradingStatus === 'pending') {
-              return { scoreText: 'Evaluation in progress', percent: 0, status: 'pending', correct: 0, total };
+              return { scoreText: 'Evaluation in progress', percent: 0, status: 'pending', correct: 0, total: totalPoints };
             } else {
-              return { scoreText: '1.8 / 2.0 pts', percent: 90, status: 'complete', correct: 1.8, total };
+              const subjectiveEarned = 0.9 * totalPoints;
+              return { scoreText: `${subjectiveEarned.toFixed(1)} / ${totalPoints.toFixed(1)} points`, percent: 90, status: 'complete', correct: subjectiveEarned, total: totalPoints };
             }
           }
           
-          const correct = secQ.filter(isQuestionCorrect).length;
-          const percent = total > 0 ? (correct / total) * 100 : 0;
+          const earnedPoints = secQ.filter(isQuestionCorrect).reduce((sum, q) => sum + (q.points ?? 2), 0);
+          const percent = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
           return {
-            scoreText: `${correct} / ${total}`,
+            scoreText: `${earnedPoints} / ${totalPoints} points`,
             percent,
             status: 'complete',
-            correct,
-            total
+            correct: earnedPoints,
+            total: totalPoints
           };
         };
 
@@ -1745,7 +1855,7 @@ export default function ExamTakePage() {
                               <div className="flex justify-between items-center py-2 border-b border-border/40">
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Objective Questions</span>
                                 <span className="text-sm font-extrabold text-foreground">
-                                  {objCorrect} / {objectiveMaxPoints} pts <span className="text-muted-foreground text-xs font-semibold">({rawObjectivePercent.toFixed(0)}%)</span>
+                                  {objCorrect} / {objectiveMaxPoints} points <span className="text-muted-foreground text-xs font-semibold">({rawObjectivePercent.toFixed(0)}%)</span>
                                 </span>
                               </div>
 
@@ -1763,7 +1873,7 @@ export default function ExamTakePage() {
                                   {adminGradingStatus === 'pending' ? (
                                     <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase">In Progress</span>
                                   ) : (
-                                    `${subjectiveScore.toFixed(1)} / 2.0 pts (${(subjectiveScore / 2 * 100).toFixed(0)}%)`
+                                    `${subjectiveScore.toFixed(1)} / ${subjectiveMaxPoints.toFixed(1)} points (${(subjectiveScore / subjectiveMaxPoints * 100).toFixed(0)}%)`
                                   )}
                                 </span>
                               </div>
@@ -1773,7 +1883,7 @@ export default function ExamTakePage() {
                                 <div className="mt-2 pt-3.5 border-t border-border flex justify-between items-center">
                                   <span className="text-xs font-bold text-foreground uppercase tracking-wider">Final Overall Grade</span>
                                   <span className="text-sm font-black text-[var(--exam-accent)]">
-                                    {totalPointsEarned.toFixed(1)} / {totalMaxPoints} pts ({finalOverallPercent.toFixed(1)}%)
+                                    {totalPointsEarned.toFixed(1)} / {totalMaxPoints} points ({finalOverallPercent.toFixed(1)}%)
                                   </span>
                                 </div>
                               )}
@@ -2003,7 +2113,7 @@ export default function ExamTakePage() {
                               No questions match the selected filter.
                             </div>
                           ) : (
-                            filteredQuestions.map((q) => {
+                        filteredQuestions.map((q) => {
                               const isCorrect = q.type !== 'essay' && isQuestionCorrect(q);
                               const isAnswered = isQuestionAnswered(q);
                               const stuAns = answers[q.id];
@@ -2023,6 +2133,9 @@ export default function ExamTakePage() {
                                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                                         · Section {q.sectionId}
                                       </span>
+                                      <span className="ml-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-muted text-muted-foreground border border-border select-none">
+                                        {q.points ?? 2} points
+                                      </span>
                                     </div>
                                     
                                     {showComparison && (
@@ -2033,7 +2146,7 @@ export default function ExamTakePage() {
                                           </span>
                                         ) : (
                                           <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
-                                            Graded: 1.8 / 2.0 pts
+                                            Graded: {(0.9 * (q.points ?? 2)).toFixed(1)} / {(q.points ?? 2).toFixed(1)} points
                                           </span>
                                         )
                                       ) : isCorrect ? (
@@ -2516,6 +2629,83 @@ export default function ExamTakePage() {
                     </div>
                   </div>
 
+                  {/* 9. Active Exam Settings */}
+                  <div className="flex flex-col gap-3 border-t border-slate-800 pt-4">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      9. Active Exam Settings
+                    </label>
+                    
+                    {/* Calculator Selection */}
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Calculator</span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'On - Scientific', label: 'Scientific' },
+                          { id: 'On - basic', label: 'Basic' },
+                          { id: 'Off', label: 'Off' }
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            onClick={() => setAdminCalculator(opt.id as any)}
+                            className={`py-2 px-1 rounded-xl border text-[10px] font-bold transition-all cursor-pointer text-center ${
+                              adminCalculator === opt.id
+                                ? 'bg-indigo-500 border-transparent text-white shadow-md'
+                                : 'bg-slate-950/30 border-slate-800 text-slate-300 hover:bg-slate-950/50'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                               {/* Highlighting Selection */}
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Highlighting</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: 'On', label: 'Allowed' },
+                          { id: 'Off', label: 'Off' }
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            onClick={() => setAdminHighlighting(opt.id as any)}
+                            className={`py-2 px-2.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer text-center ${
+                              adminHighlighting === opt.id
+                                ? 'bg-indigo-500 border-transparent text-white shadow-md'
+                                : 'bg-slate-950/30 border-slate-800 text-slate-300 hover:bg-slate-950/50'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Backward Navigation Selection */}
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Backward Navigation</span>
+                      <div className="flex flex-col gap-2">
+                        {[
+                          { id: 'On - section level', label: 'Allowed - Section level' },
+                          { id: 'On - Exam level', label: 'Allowed - Exam level' },
+                          { id: 'Off', label: 'Off' }
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            onClick={() => setAdminBackwardNavigation(opt.id as any)}
+                            className={`py-2 px-2.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer text-left px-3 ${
+                              adminBackwardNavigation === opt.id
+                                ? 'bg-indigo-500 border-transparent text-white shadow-md'
+                                : 'bg-slate-950/30 border-slate-800 text-slate-300 hover:bg-slate-950/50'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
                   </div>
                 </div>
               )}
@@ -2535,7 +2725,7 @@ export default function ExamTakePage() {
           ></div>
           
           {/* Sidebar frame */}
-          <div className="relative w-80 max-w-full h-full bg-card border-l border-border flex flex-col shadow-2xl p-6 z-10 animate-slide-in">
+          <div className="relative md:w-1/3 w-full h-full bg-card border-l border-border flex flex-col shadow-2xl p-6 z-10 animate-slide-in">
             <div className="flex justify-between items-center border-b pb-4 mb-4 border-border">
               <h3 className="font-bold text-md text-foreground flex items-center gap-2">
                 <i className="fa-light fa-list-ul" />
@@ -2613,54 +2803,66 @@ export default function ExamTakePage() {
                   return (
                     <div key={secId} className="flex flex-col gap-1 border-b border-border/40 last:border-b-0 pb-2.5 last:pb-0">
                       <div className="flex justify-between items-center text-[10px] font-extrabold text-muted-foreground tracking-wider">
-                        <button
-                          onClick={() => {
-                            setTargetSectionId(secId);
-                            const firstQIdx = questions.findIndex(q => q.sectionId === secId);
-                            if (firstQIdx !== -1) {
-                              setIntroTargetQuestionIndex(firstQIdx);
-                            }
-                            setPhase('section-intro');
-                            setIsNavigatorOpen(false);
-                          }}
-                          className="hover:text-[var(--exam-accent)] transition-all cursor-pointer font-extrabold text-left flex items-center gap-1"
-                        >
-                          <i className="fa-light fa-layer-group text-[9px]" />
-                          <span>{secId}: {sectionName}</span>
-                        </button>
+                        {(() => {
+                          const isSectionHeaderDisabled = (adminBackwardNavigation === 'Off' || adminBackwardNavigation === 'On - section level') && secId < currentQuestion.sectionId;
+                          return (
+                            <button
+                              onClick={() => {
+                                if (isSectionHeaderDisabled) return;
+                                setTargetSectionId(secId);
+                                const firstQIdx = questions.findIndex(q => q.sectionId === secId);
+                                if (firstQIdx !== -1) {
+                                  setIntroTargetQuestionIndex(firstQIdx);
+                                }
+                                setPhase('section-intro');
+                                setIsNavigatorOpen(false);
+                              }}
+                              disabled={isSectionHeaderDisabled}
+                              className={`transition-all font-extrabold text-left flex items-center gap-1 ${
+                                isSectionHeaderDisabled
+                                  ? "opacity-40 cursor-not-allowed pointer-events-none"
+                                  : "hover:text-[var(--exam-accent)] cursor-pointer"
+                              }`}
+                            >
+                              <i className="fa-light fa-layer-group text-[9px]" />
+                              <span>{secId}: {sectionName}</span>
+                            </button>
+                          );
+                        })()}
                         <span className="text-[9px] bg-muted/60 px-1.5 py-0.5 rounded font-mono">
                           {sectionQuestions.length} Qs
                         </span>
                       </div>
-                      <div className="grid grid-cols-5 gap-x-1.5 gap-y-2.5 justify-items-center mt-0.5">
+                      <div className="grid grid-cols-10 gap-x-1.5 gap-y-2.5 justify-items-center mt-0.5">
                         {sectionQuestions.map((q) => {
                           const idx = questions.findIndex((x) => x.id === q.id);
                           const isCurrent = idx === currentQuestionIndex;
                           const isAnswered = isQuestionAnswered(q);
                           const isPartiallyAnswered = isQuestionPartiallyAnswered(q);
                           const isFlagged = bookmarks.has(q.id);
+                          const isQuestionDisabled = (adminBackwardNavigation === 'Off' && idx < currentQuestionIndex) || (adminBackwardNavigation === 'On - section level' && q.sectionId < currentQuestion.sectionId);
                           
                           return (
                             <button
                               key={q.id}
                               onClick={() => {
+                                if (isQuestionDisabled) return;
                                 setCurrentQuestionIndex(idx);
                                 setIsNavigatorOpen(false);
                               }}
-                              className={`relative w-[30px] h-[30px] rounded-full font-bold text-xs flex items-center justify-center transition-all cursor-pointer ${
-                                isAnswered
-                                  ? "bg-[var(--state-answered-bg)] text-[var(--state-answered-text)]"
+                              disabled={isQuestionDisabled}
+                              className={`relative w-[30px] h-[30px] rounded-full font-bold text-xs flex items-center justify-center transition-all ${
+                                isQuestionDisabled
+                                  ? "opacity-30 cursor-not-allowed pointer-events-none bg-muted text-muted-foreground border-border"
+                                  : isAnswered
+                                  ? "bg-[var(--state-answered-bg)] text-[var(--state-answered-text)] border border-[var(--state-answered-border)]"
                                   : isPartiallyAnswered
-                                  ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+                                  ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/70 border border-border"
                               } ${
                                 isCurrent
                                   ? "border-[3px] border-[var(--exam-accent)]"
-                                  : isAnswered
-                                  ? "border border-[var(--state-answered-border)]"
-                                  : isPartiallyAnswered
-                                  ? "border border-amber-300 dark:border-amber-800/60"
-                                  : "border border-border"
+                                  : ""
                               }`}
                             >
                               {idx + 1}
@@ -2730,17 +2932,17 @@ export default function ExamTakePage() {
         </div>
       )}
 
-      {/* TOOLS MODAL */}
+      {/* TOOLS DRAWER */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-50 flex justify-end">
           <div
             onClick={() => setIsSettingsOpen(false)}
-            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
           ></div>
           
-          <div className="relative max-w-lg w-full max-h-[85vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col animate-card-enter text-left z-10 overflow-hidden">
-            {/* Sticky Header */}
-            <div className="flex justify-between items-center border-b p-6 pb-3 border-border shrink-0 bg-card sticky top-0 z-10">
+          <div className="relative md:w-1/3 w-full h-full bg-card border-l border-border flex flex-col shadow-2xl p-6 z-10 animate-slide-in text-left overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b pb-4 mb-4 border-border shrink-0 bg-card">
               <h3 className="font-bold text-md text-foreground flex items-center gap-2">
                 <i className="fa-light fa-toolbox text-[var(--exam-accent)]" />
                 Tools
@@ -2754,7 +2956,7 @@ export default function ExamTakePage() {
             </div>
 
             {/* Scrollable Content Body */}
-            <div className="flex-grow overflow-y-auto p-6 flex flex-col gap-6">
+            <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-6">
               {/* SECTION 1: ACCESSIBILITY */}
               <div className="flex flex-col gap-4">
                 <div className="pb-1 border-b border-border/40">
@@ -2847,254 +3049,48 @@ export default function ExamTakePage() {
                   </button>
                 </div>
               </div>
-
-              {/* SECTION 2: OTHERS */}
-              <div className="flex flex-col gap-4 border-t pt-4 border-border">
-                <div className="pb-1 border-b border-border/40">
-                  <h4 className="text-xs font-extrabold tracking-wider text-[var(--exam-accent)] normal-case">Others</h4>
-                </div>
-
-                {/* Highlighter Tool */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center pb-1 w-full gap-3">
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case shrink-0">Highlighter Tool</label>
-                      {highlighterColor && (
-                        <div className="flex items-center gap-1.5 animate-card-enter">
-                          {(['yellow', 'blue', 'pink', 'green'] as const).map((color) => {
-                            const colorBg = {
-                              yellow: 'bg-yellow-200 dark:bg-yellow-500/40 border-yellow-400',
-                              blue: 'bg-blue-200 dark:bg-blue-500/40 border-blue-400',
-                              pink: 'bg-pink-200 dark:bg-pink-500/40 border-pink-400',
-                              green: 'bg-green-200 dark:bg-green-500/40 border-green-400'
-                            }[color];
-                            
-                            const isSelected = highlighterColor === color;
-
-                            return (
-                              <button
-                                key={color}
-                                type="button"
-                                onClick={() => setHighlighterColor(color)}
-                                className={`size-5 rounded-full border transition-all cursor-pointer ${colorBg} ${
-                                  isSelected ? 'ring-2 ring-foreground scale-110' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-105'
-                                }`}
-                                title={`Highlight with ${color}`}
-                              />
-                            );
-                          })}
-
-                          {(highlights[currentQuestion.id] && highlights[currentQuestion.id].length > 0) && (
-                            <button
-                              type="button"
-                              onClick={() => setHighlights(prev => ({ ...prev, [currentQuestion.id]: [] }))}
-                              className="py-0.5 px-1.5 rounded border border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/10 text-[9px] font-bold cursor-pointer transition-all shrink-0 ml-1"
-                            >
-                              Clear
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {/* Pill Toggle Switch at title level */}
-                    <button
-                      type="button"
-                      onClick={() => setHighlighterColor(prev => prev ? null : 'yellow')}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        highlighterColor ? 'bg-[var(--exam-accent)]' : 'bg-muted'
-                      }`}
-                      role="switch"
-                      aria-checked={!!highlighterColor}
-                      title={highlighterColor ? "Disable Highlighter" : "Enable Highlighter"}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                          highlighterColor ? 'translate-x-4' : 'translate-x-0'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Report a Question */}
-                <div className="flex flex-col gap-2 border-t pt-4 border-border/40">
-                  <div className="flex justify-between items-center w-full">
-                    <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">Report a Question</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsReportFormOpen(!isReportFormOpen)}
-                      className="px-2 py-0.5 rounded-md border border-[var(--exam-accent)] bg-[var(--exam-accent-light)] text-[var(--exam-accent)] hover:opacity-90 text-[10px] font-bold cursor-pointer transition-all shrink-0"
-                    >
-                      {isReportFormOpen ? "Cancel" : "Report"}
-                    </button>
-                  </div>
-                  
-                  {isReportFormOpen && (
-                    <div className="flex flex-col gap-2.5 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
-                      <div className="flex flex-col gap-1.5 relative report-dropdown-container">
-                        <span className="text-xs font-bold text-foreground">Select Question(s):</span>
-                        <div className="relative">
-                          <button
-                            type="button"
-                            onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
-                            className="w-full py-1.5 px-3 rounded-lg border border-border bg-card text-xs text-left text-foreground flex justify-between items-center cursor-pointer hover:bg-muted"
-                          >
-                            <span className="truncate">
-                              {reportedQuestionIds.length === 0
-                                ? "Select questions..."
-                                : reportedQuestionIds.length === 1
-                                ? (() => {
-                                    const qId = reportedQuestionIds[0];
-                                    const idx = questions.findIndex(q => q.id === qId);
-                                    if (idx !== -1) {
-                                      const q = questions[idx];
-                                      return `Q${idx + 1}. ${q.text.length > 50 ? q.text.slice(0, 50) + "..." : q.text}`;
-                                    }
-                                    return "Select questions...";
-                                  })()
-                                : reportedQuestionIds
-                                    .map(id => questions.findIndex(q => q.id === id) + 1)
-                                    .filter(n => n > 0)
-                                    .sort((a, b) => a - b)
-                                    .map(n => `Q${n}`)
-                                    .join(", ")}
-                            </span>
-                            <i className="fa-solid fa-chevron-down text-muted-foreground text-[10px]" />
-                          </button>
-                          
-                          {isReportDropdownOpen && (
-                            <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-40 overflow-y-auto bg-card border border-border rounded-lg shadow-lg p-2 flex flex-col gap-1">
-                              {questions.map((q, idx) => {
-                                const isSelected = reportedQuestionIds.includes(q.id);
-                                return (
-                                  <label
-                                    key={q.id}
-                                    className="flex items-center gap-2 px-2 py-1 hover:bg-muted rounded text-xs cursor-pointer text-foreground min-w-0"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isSelected}
-                                      onChange={() => {
-                                        setReportedQuestionIds(prev =>
-                                          prev.includes(q.id)
-                                            ? prev.filter(id => id !== q.id)
-                                            : [...prev, q.id]
-                                        );
-                                      }}
-                                      className="rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer shrink-0"
-                                    />
-                                    <span className="truncate" title={`${idx + 1}. ${q.text}`}>
-                                      {idx + 1}. {q.text.length > 60 ? q.text.slice(0, 60) + "..." : q.text}
-                                    </span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs font-bold text-foreground">Describe the issue:</span>
-                        <textarea
-                          value={reportComment}
-                          onChange={(e) => setReportComment(e.target.value)}
-                          placeholder="What is wrong with this question?"
-                          rows={3}
-                          className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
-                        />
-                      </div>
-                      
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          type="button"
-                          onClick={handleReportSubmit}
-                          disabled={reportedQuestionIds.length === 0 || !reportComment.trim()}
-                          className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
-                        >
-                          Submit
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Help Request */}
-                <div className="flex flex-col gap-2 border-t pt-4 border-border/40">
-                  <div className="flex justify-between items-center w-full">
-                    <label className="text-xs font-bold tracking-wider text-muted-foreground normal-case">Help & Support</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsHelpFormOpen(!isHelpFormOpen)}
-                      className="px-2 py-0.5 rounded-md border border-[var(--exam-accent)] bg-[var(--exam-accent-light)] text-[var(--exam-accent)] hover:opacity-90 text-[10px] font-bold cursor-pointer transition-all shrink-0"
-                    >
-                      {isHelpFormOpen ? "Cancel" : "Request"}
-                    </button>
-                  </div>
-                  
-                  {isHelpFormOpen && (
-                    <div className="flex flex-col gap-2 p-3 bg-muted/30 border border-border rounded-xl animate-card-enter">
-                      <span className="text-xs font-bold text-foreground">Describe your issue:</span>
-                      <textarea
-                        value={helpComment}
-                        onChange={(e) => setHelpComment(e.target.value)}
-                        placeholder="Describe what you need help with..."
-                        rows={3}
-                        className="w-full p-2 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
-                      />
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          type="button"
-                          onClick={handleHelpSubmit}
-                          disabled={!helpComment.trim()}
-                          className="px-3 py-1.5 text-xs font-bold bg-[var(--exam-accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
-                        >
-                          Submit
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Sticky Footer */}
-            <div className="border-t p-6 pt-3 border-border shrink-0 bg-card sticky bottom-0 z-10">
-              <button
-                onClick={() => setIsSettingsOpen(false)}
-                className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all mt-2 cursor-pointer text-sm"
-              >
-                Apply Settings
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* KEYBOARD SHORTCUTS MODAL */}
+      {/* KEYBOARD SHORTCUTS DRAWER */}
       {isShortcutsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-50 flex justify-end">
           <div
-            onClick={() => setIsShortcutsOpen(false)}
-            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
+            onClick={() => {
+              setIsShortcutsOpen(false);
+              setIsSettingsOpen(true);
+            }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
           ></div>
           
-          <div className="relative max-w-lg w-full p-6 bg-card border border-border rounded-2xl shadow-2xl flex flex-col gap-5 animate-card-enter text-left z-10">
-            <div className="flex justify-between items-center border-b pb-3 border-border">
-              <h3 className="font-bold text-md text-foreground flex items-center gap-2">
+          <div className="relative md:w-1/3 w-full h-full bg-card border-l border-border flex flex-col shadow-2xl p-6 z-10 animate-slide-in text-left overflow-hidden">
+            <div className="flex items-center gap-3 border-b pb-4 mb-4 border-border shrink-0 bg-card">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsShortcutsOpen(false);
+                  setIsSettingsOpen(true);
+                }}
+                className="text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none flex items-center justify-center p-1 rounded-md hover:bg-muted"
+                title="Back to Tools"
+              >
+                <i className="fa-light fa-arrow-left text-base" />
+              </button>
+              <h3 className="font-bold text-md text-foreground flex items-center gap-2 flex-grow">
                 <i className="fa-light fa-keyboard text-[var(--exam-accent)]" />
                 Keyboard Shortcuts
               </h3>
               <button
                 onClick={() => setIsShortcutsOpen(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                className="text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
               >
                 <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
               </button>
             </div>
 
-            <div className="overflow-x-auto max-h-[380px] overflow-y-auto pr-1">
+            <div className="flex-grow overflow-y-auto pr-1">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b text-left font-bold bg-muted/50">
@@ -3142,267 +3138,415 @@ export default function ExamTakePage() {
                 </tbody>
               </table>
             </div>
-
-            <button
-              onClick={() => setIsShortcutsOpen(false)}
-              className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all mt-2 cursor-pointer text-sm"
-            >
-              Close
-            </button>
           </div>
         </div>
       )}
 
-      {/* FINAL SUBMIT VERIFICATION MODAL */}
-      {isSubmitModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          {/* Overlay (clicking outside will NOT close the modal) */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-xs"></div>
-          
-          <div className="relative max-w-md w-full p-6 bg-card border border-border rounded-2xl shadow-2xl flex flex-col gap-5 animate-card-enter text-center z-10">
-            {/* Close Icon top right */}
-            <button
-              onClick={() => setIsSubmitModalOpen(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-              aria-label="Close"
-            >
-              <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
-            </button>
-
-            <div className="w-12 h-12 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto">
-              <i className="fa-light fa-file-shield" style={{ fontSize: "20px" }} />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <h3 className="text-xl font-bold text-foreground">Submit Exam</h3>
-              <p className="text-sm text-muted-foreground">
-                Please review your exam completion summary.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl border text-left bg-muted/40 border-border">
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground">Questions Answered</span>
-                <span className="text-sm font-bold text-foreground">{getAnsweredCount()} / {questions.length}</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground">Unanswered Questions</span>
-                <span className={`text-sm font-bold ${questions.length - getAnsweredCount() > 0 ? "text-destructive" : "text-foreground"}`}>
-                  {questions.length - getAnsweredCount()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground">Partially Answered</span>
-                <span className={`text-sm font-bold ${getPartiallyAnsweredCount() > 0 ? "text-amber-500" : "text-foreground"}`}>
-                  {getPartiallyAnsweredCount()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-border">
-                <span className="text-xs font-bold text-muted-foreground">Flagged For Review</span>
-                <span className="text-sm font-bold text-foreground">{bookmarks.size}</span>
-              </div>
-              <div className="flex justify-between items-center py-1.5">
-                <span className="text-xs font-bold text-muted-foreground">Time Remaining</span>
-                <span className={`text-sm font-bold font-timer ${timeLeft <= 300 ? "text-destructive animate-pulse" : "text-foreground"}`}>
-                  {formatTime(timeLeft)}
-                </span>
-              </div>
-            </div>
-
-            {(bookmarks.size > 0 || getPartiallyAnsweredCount() > 0) && (
-              <div className="p-3 bg-[var(--state-flagged-bg)] border border-[var(--state-flagged-border)] rounded-xl text-left flex items-start gap-2 text-xs text-[var(--state-flagged-text)] leading-relaxed animate-card-enter">
-                <i className="fa-solid fa-bookmark mt-0.5 shrink-0 text-sm animate-pulse" />
-                <span>
-                  You have{" "}
-                  {bookmarks.size > 0 && (
-                    <>
-                      <strong>{bookmarks.size}</strong> question{bookmarks.size > 1 ? "s" : ""} flagged for review
-                    </>
-                  )}
-                  {bookmarks.size > 0 && getPartiallyAnsweredCount() > 0 && " and "}
-                  {getPartiallyAnsweredCount() > 0 && (
-                    <>
-                      <strong>{getPartiallyAnsweredCount()}</strong> question{getPartiallyAnsweredCount() > 1 ? "s" : ""} partially answered
-                    </>
-                  )}
-                  . Click on review to inspect them.
-                </span>
-              </div>
-            )}
-
-            <p className="text-xs text-muted-foreground px-1 leading-relaxed">
-              After submitting, you will no longer be able to modify your answers or return to this assessment.
-            </p>
-
-            <div className="flex gap-3 mt-1">
-              <button
-                type="button"
-                disabled={bookmarks.size === 0 && getPartiallyAnsweredCount() === 0}
-                onClick={() => {
-                  setIsSubmitModalOpen(false);
-                  const firstTargetQ = questions.find((q) => bookmarks.has(q.id) || isQuestionPartiallyAnswered(q));
-                  if (firstTargetQ) {
-                    const idx = questions.findIndex((x) => x.id === firstTargetQ.id);
-                    setCurrentQuestionIndex(idx !== -1 ? idx : 0);
-                  }
-                }}
-                className="flex-1 border border-border bg-background hover:bg-muted font-bold py-2.5 rounded-xl transition-all cursor-pointer text-xs flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed text-foreground"
-                title={(bookmarks.size === 0 && getPartiallyAnsweredCount() === 0) ? "No flagged or partially answered questions to review" : "Review Flagged or Partially Answered Questions"}
-              >
-                <i className="fa-solid fa-bookmark text-[var(--state-flagged-text)]" /> Review
-              </button>
-              <button
-                onClick={() => {
-                  fillMockAnswers();
-                  setIsSubmitModalOpen(false);
-                  setPhase('submitted');
-                }}
-                className="flex-1 bg-destructive hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all cursor-pointer text-sm shadow-md"
-              >
-                Submit &amp; Finish
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* GLOBAL REFERENCES DRAWER */}
-      {isGlobalRefOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+      {/* REPORT A QUESTION DRAWER */}
+      {isReportFormOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
           <div
-            onClick={() => setIsGlobalRefOpen(false)}
-            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
+            onClick={() => setIsReportFormOpen(false)}
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
           ></div>
           
-          <div className="relative max-w-4xl w-full h-[85vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-10 animate-card-enter">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-muted/20">
+          <div className="relative md:w-1/3 w-full h-full bg-card border-l border-border flex flex-col shadow-2xl p-6 z-10 animate-slide-in text-left overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b pb-4 mb-4 border-border shrink-0 bg-card">
               <h3 className="font-bold text-md text-foreground flex items-center gap-2">
-                <i className="fa-light fa-file-shield text-[var(--exam-accent)]" />
-                Assessment Global References
+                <i className="fa-light fa-circle-exclamation text-amber-500 text-base" />
+                Report a Question
               </h3>
               <button
-                onClick={() => setIsGlobalRefOpen(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                onClick={() => setIsReportFormOpen(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
               >
                 <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
               </button>
             </div>
 
-            {/* Tab selection */}
-            <div className="flex border-b border-border bg-muted/10 shrink-0 overflow-x-auto">
-              {['Formulae Sheet', 'Reference PDF', 'Reference Image', 'Auscultation Audio', 'Assessment Video'].map((title, idx) => (
-                <button
-                  key={title}
-                  onClick={() => setGlobalRefTab(idx)}
-                  className={`py-3 px-5 font-semibold text-xs uppercase tracking-wider outline-none text-center cursor-pointer border-b-2 transition-all min-w-[150px] ${
-                    globalRefTab === idx
-                      ? "border-[var(--exam-accent)] text-[var(--exam-accent)] bg-card"
-                      : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                  }`}
-                >
-                  {title}
-                </button>
-              ))}
+            {/* Scrollable body */}
+            <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-6">
+              <div className="flex flex-col gap-1.5 relative report-dropdown-container">
+                <span className="text-xs font-bold text-foreground">Select Question(s):</span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
+                    className="w-full py-2 px-3 rounded-lg border border-border bg-card text-xs text-left text-foreground flex justify-between items-center cursor-pointer hover:bg-muted"
+                  >
+                    <span className="truncate">
+                      {reportedQuestionIds.length === 0
+                        ? "Select questions..."
+                        : reportedQuestionIds.length === 1
+                        ? (() => {
+                            const qId = reportedQuestionIds[0];
+                            const idx = questions.findIndex(q => q.id === qId);
+                            if (idx !== -1) {
+                              const q = questions[idx];
+                              return `Q${idx + 1}. ${q.text.length > 50 ? q.text.slice(0, 50) + "..." : q.text}`;
+                            }
+                            return "Select questions...";
+                          })()
+                        : reportedQuestionIds
+                            .map(id => questions.findIndex(q => q.id === id) + 1)
+                            .filter(n => n > 0)
+                            .sort((a, b) => a - b)
+                            .map(n => `Q${n}`)
+                            .join(", ")}
+                    </span>
+                    <i className="fa-solid fa-chevron-down text-muted-foreground text-[10px]" />
+                  </button>
+                  
+                  {isReportDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto bg-card border border-border rounded-lg shadow-lg p-2 flex flex-col gap-1">
+                      {questions.map((q, idx) => {
+                        const isSelected = reportedQuestionIds.includes(q.id);
+                        return (
+                          <label
+                            key={q.id}
+                            className="flex items-center gap-2 px-2 py-1 hover:bg-muted rounded text-xs cursor-pointer text-foreground min-w-0"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setReportedQuestionIds(prev =>
+                                  prev.includes(q.id)
+                                    ? prev.filter(id => id !== q.id)
+                                    : [...prev, q.id]
+                                );
+                              }}
+                              className="rounded border-border text-[var(--exam-accent)] focus:ring-[var(--exam-accent)] cursor-pointer shrink-0"
+                            />
+                            <span className="truncate" title={`${idx + 1}. ${q.text}`}>
+                              {idx + 1}. {q.text.length > 60 ? q.text.slice(0, 60) + "..." : q.text}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-foreground">Describe the issue:</span>
+                <textarea
+                  value={reportComment}
+                  onChange={(e) => setReportComment(e.target.value)}
+                  placeholder="What is wrong with this question?"
+                  rows={6}
+                  className="w-full p-3 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
+                />
+              </div>
             </div>
 
-            {/* Tab content panel */}
-            <div className="flex-1 overflow-y-auto p-6 bg-card">
-              {globalRefTab === 0 && (
-                <div className="flex flex-col gap-6 max-w-2xl mx-auto">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">Medical Formula Guide</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl border border-border bg-muted/20">
-                      <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Renal Clearance</span>
-                      <p className="text-sm font-semibold mt-1 font-mono text-foreground">Cx = (Ux * V) / Px</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Cx = clearance of x, Ux = urine conc, V = urine flow rate, Px = plasma conc</p>
-                    </div>
-                    <div className="p-4 rounded-xl border border-border bg-muted/20">
-                      <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Acid-Base Balance</span>
-                      <p className="text-sm font-semibold mt-1 font-mono text-foreground">pH = pKa + log([HCO3-] / [0.03 * PaCO2])</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Henderson-Hasselbalch equation for arterial blood gas interpretation</p>
-                    </div>
-                    <div className="p-4 rounded-xl border border-border bg-muted/20">
-                      <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Cardiology - Cardiac Output</span>
-                      <p className="text-sm font-semibold mt-1 font-mono text-foreground">CO = SV * HR</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">SV = stroke volume, HR = heart rate, CO = cardiac output</p>
-                    </div>
-                    <div className="p-4 rounded-xl border border-border bg-muted/20">
-                      <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Cardiology - Blood Pressure</span>
-                      <p className="text-sm font-semibold mt-1 font-mono text-foreground">MAP = DBP + 1/3 (SBP - DBP)</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">MAP = Mean Arterial Pressure, SBP = Systolic BP, DBP = Diastolic BP</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {globalRefTab === 1 && (
-                <div className="w-full h-full flex flex-col border rounded-xl overflow-hidden bg-muted">
-                  <iframe
-                    src="https://www.africau.edu/images/default/sample.pdf"
-                    className="w-full h-full min-h-[450px]"
-                    title="Global Guidelines PDF"
-                  />
-                </div>
-              )}
-
-              {globalRefTab === 2 && (
-                <div className="w-full h-full flex items-center justify-center min-h-[400px]">
-                  <img
-                    src="https://images.unsplash.com/photo-1559757175-5700dde675bc?w=900&q=80"
-                    alt="Anatomy Reference Chart"
-                    className="max-w-full max-h-[450px] object-contain rounded-lg border shadow-sm"
-                  />
-                </div>
-              )}
-
-              {globalRefTab === 3 && (
-                <div className="w-full h-full flex flex-col items-center justify-center min-h-[350px] gap-4">
-                  <div className="rounded-xl border p-6 bg-muted max-w-md w-full flex flex-col items-center justify-center gap-4">
-                    <audio
-                      src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-                      controls
-                      className="w-full"
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">Cardiac Auscultation Reference Recording</span>
-                </div>
-              )}
-
-              {globalRefTab === 4 && (
-                <div className="w-full h-full flex flex-col items-center justify-center min-h-[380px] gap-4">
-                  <div className="rounded-xl border p-2 bg-black overflow-hidden max-w-xl w-full flex items-center justify-center">
-                    <video
-                      src="https://www.w3schools.com/html/mov_bbb.mp4"
-                      controls
-                      className="w-full max-h-[350px]"
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">Patient Gait Mobility Assessment Video</span>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-border bg-muted/10 flex justify-end shrink-0">
+            {/* Footer Submit Button */}
+            <div className="border-t pt-4 mt-4 border-border shrink-0 bg-card">
               <button
-                onClick={() => setIsGlobalRefOpen(false)}
-                className="bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2 px-5 rounded-xl transition-all cursor-pointer text-xs"
+                type="button"
+                onClick={handleReportSubmit}
+                disabled={reportedQuestionIds.length === 0 || !reportComment.trim()}
+                className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all cursor-pointer text-sm disabled:opacity-40 disabled:pointer-events-none"
               >
-                Close References
+                Submit Report
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* HELP DRAWER */}
+      {isHelpFormOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            onClick={() => setIsHelpFormOpen(false)}
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
+          ></div>
+          
+          <div className="relative md:w-1/3 w-full h-full bg-card border-l border-border flex flex-col shadow-2xl p-6 z-10 animate-slide-in text-left overflow-hidden">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b pb-4 mb-4 border-border shrink-0 bg-card">
+              <h3 className="font-bold text-md text-foreground flex items-center gap-2">
+                <i className="fa-light fa-circle-question text-[var(--exam-accent)]" />
+                Help & Support
+              </h3>
+              <button
+                onClick={() => setIsHelpFormOpen(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer focus:outline-none"
+              >
+                <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-grow overflow-y-auto pr-1 flex flex-col gap-6">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-foreground">Describe your issue:</span>
+                <textarea
+                  value={helpComment}
+                  onChange={(e) => setHelpComment(e.target.value)}
+                  placeholder="Describe what you need help with..."
+                  rows={6}
+                  className="w-full p-3 bg-card border border-border rounded-lg text-xs focus:outline-none focus:border-[var(--exam-accent)] resize-none text-foreground bg-background"
+                />
+              </div>
+            </div>
+
+            {/* Footer Submit Button */}
+            <div className="border-t pt-4 mt-4 border-border shrink-0 bg-card">
+              <button
+                type="button"
+                onClick={handleHelpSubmit}
+                disabled={!helpComment.trim()}
+                className="w-full bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all cursor-pointer text-sm disabled:opacity-40 disabled:pointer-events-none"
+              >
+                Submit Help Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FINAL SUBMIT VERIFICATION MODAL */}
+      {isSubmitModalOpen && (() => {
+        const hasUnanswered = (questions.length - getAnsweredCount()) > 0;
+        const hasPartiallyAnswered = getPartiallyAnsweredCount() > 0;
+        const showWarning = bookmarks.size > 0;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            {/* Overlay (clicking outside will NOT close the modal) */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-xs"></div>
+            
+            <div className="relative max-w-md w-full p-6 bg-card border border-border rounded-2xl shadow-2xl flex flex-col gap-5 animate-card-enter text-center z-10">
+              {/* Close Icon top right */}
+              <button
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                aria-label="Close"
+              >
+                <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
+              </button>
+
+              <div className="w-12 h-12 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto">
+                <i className="fa-light fa-file-shield" style={{ fontSize: "20px" }} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <h3 className="text-xl font-bold text-foreground">Submit Exam</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please review your exam completion summary.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl border text-left bg-muted/40 border-border">
+                <div className="flex justify-between items-center py-1.5 border-b border-border">
+                  <span className="text-xs font-bold text-muted-foreground">Questions Answered</span>
+                  <span className="text-sm font-bold text-foreground">{getAnsweredCount()} / {questions.length}</span>
+                </div>
+                <div className="flex justify-between items-center py-1.5 border-b border-border">
+                  <span className="text-xs font-bold text-muted-foreground">Unanswered Questions</span>
+                  <span className={`text-sm font-bold ${hasUnanswered ? "text-destructive" : "text-foreground"}`}>
+                    {questions.length - getAnsweredCount()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1.5 border-b border-border">
+                  <span className="text-xs font-bold text-muted-foreground">Partially Answered</span>
+                  <span className={`text-sm font-bold ${hasPartiallyAnswered ? "text-amber-500" : "text-foreground"}`}>
+                    {getPartiallyAnsweredCount()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-1.5 border-b border-border">
+                  <span className="text-xs font-bold text-muted-foreground">Flagged For Review</span>
+                  <span className="text-sm font-bold text-foreground">{bookmarks.size}</span>
+                </div>
+                <div className="flex justify-between items-center py-1.5">
+                  <span className="text-xs font-bold text-muted-foreground">Time Remaining</span>
+                  <span className={`text-sm font-bold font-timer ${timeLeft <= 300 ? "text-destructive animate-pulse" : "text-foreground"}`}>
+                    {formatTime(timeLeft)}
+                  </span>
+                </div>
+              </div>
+
+              {showWarning && (
+                <div className="p-3 bg-[var(--state-flagged-bg)] border border-[var(--state-flagged-border)] rounded-xl text-left flex items-center justify-between gap-3 text-xs text-[var(--state-flagged-text)] leading-relaxed animate-card-enter">
+                  <div className="flex items-start gap-2">
+                    <i className="fa-solid fa-bookmark mt-0.5 shrink-0 text-sm animate-pulse" />
+                    <span>
+                      You have <strong>{bookmarks.size}</strong> question{bookmarks.size > 1 ? "s" : ""} flagged for review.
+                    </span>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSubmitModalOpen(false);
+                      const firstTargetQ = questions.find((q) => bookmarks.has(q.id));
+                      if (firstTargetQ) {
+                        const idx = questions.findIndex((x) => x.id === firstTargetQ.id);
+                        setCurrentQuestionIndex(idx !== -1 ? idx : 0);
+                      }
+                    }}
+                    className="border border-[var(--state-flagged-text)]/30 hover:bg-[var(--state-flagged-text)] hover:text-white text-[var(--state-flagged-text)] font-extrabold px-3 py-1.5 rounded-lg transition-all cursor-pointer text-[11px] shrink-0"
+                  >
+                    Review
+                  </button>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground px-1 leading-relaxed">
+                After submitting, you will no longer be able to modify your answers or return to this assessment.
+              </p>
+
+              <div className="w-full mt-1">
+                <button
+                  onClick={() => {
+                    fillMockAnswers();
+                    setIsSubmitModalOpen(false);
+                    setPhase('submitted');
+                  }}
+                  className="w-full bg-destructive hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all cursor-pointer text-sm shadow-md"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* GLOBAL REFERENCES DRAWER */}
+      {isGlobalRefOpen && (
+        <div className="fixed top-20 left-6 w-[600px] max-w-[calc(100vw-3rem)] h-[65vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 animate-card-enter">
+          {/* Modal Header */}
+          <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-muted/20">
+            <h3 className="font-bold text-md text-foreground flex items-center gap-2">
+              <i className="fa-light fa-file-shield text-[var(--exam-accent)]" />
+              Exam references
+            </h3>
+            <button
+              onClick={() => setIsGlobalRefOpen(false)}
+              className="text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <i className="fa-solid fa-xmark" style={{ fontSize: "16px" }} />
+            </button>
+          </div>
+
+          {/* Tab selection */}
+          <div className="flex border-b border-border bg-muted/10 shrink-0 overflow-x-auto">
+            {['Formulae Sheet', 'Reference PDF', 'Reference Image', 'Auscultation Audio', 'Assessment Video'].map((title, idx) => (
+              <button
+                key={title}
+                onClick={() => setGlobalRefTab(idx)}
+                className={`py-2 px-3 font-semibold text-[10px] uppercase tracking-wider outline-none text-center cursor-pointer border-b-2 transition-all min-w-[110px] ${
+                  globalRefTab === idx
+                    ? "border-[var(--exam-accent)] text-[var(--exam-accent)] bg-card"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                }`}
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content panel */}
+          <div className="flex-1 overflow-y-auto p-6 bg-card">
+            {globalRefTab === 0 && (
+              <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">Medical Formula Guide</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-border bg-muted/20">
+                    <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Renal Clearance</span>
+                    <p className="text-sm font-semibold mt-1 font-mono text-foreground">Cx = (Ux * V) / Px</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Cx = clearance of x, Ux = urine conc, V = urine flow rate, Px = plasma conc</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border bg-muted/20">
+                    <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Acid-Base Balance</span>
+                    <p className="text-sm font-semibold mt-1 font-mono text-foreground">pH = pKa + log([HCO3-] / [0.03 * PaCO2])</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Henderson-Hasselbalch equation for arterial blood gas interpretation</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border bg-muted/20">
+                    <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Cardiology - Cardiac Output</span>
+                    <p className="text-sm font-semibold mt-1 font-mono text-foreground">CO = SV * HR</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">SV = stroke volume, HR = heart rate, CO = cardiac output</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border bg-muted/20">
+                    <span className="text-xs font-bold text-[var(--exam-accent)] uppercase">Cardiology - Blood Pressure</span>
+                    <p className="text-sm font-semibold mt-1 font-mono text-foreground">MAP = DBP + 1/3 (SBP - DBP)</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">MAP = Mean Arterial Pressure, SBP = Systolic BP, DBP = Diastolic BP</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {globalRefTab === 1 && (
+              <div className="w-full h-full flex flex-col border rounded-xl overflow-hidden bg-muted flex-1">
+                <iframe
+                  src="https://www.africau.edu/images/default/sample.pdf"
+                  className="w-full flex-1 min-h-[300px]"
+                  title="Global Guidelines PDF"
+                />
+              </div>
+            )}
+
+            {globalRefTab === 2 && (
+              <div className="w-full h-full flex items-center justify-center min-h-[300px]">
+                <img
+                  src="https://images.unsplash.com/photo-1559757175-5700dde675bc?w=900&q=80"
+                  alt="Anatomy Reference Chart"
+                  className="max-w-full max-h-full object-contain rounded-lg border shadow-sm"
+                />
+              </div>
+            )}
+
+            {globalRefTab === 3 && (
+              <div className="w-full h-full flex flex-col items-center justify-center min-h-[300px] gap-4">
+                <div className="rounded-xl border p-6 bg-muted max-w-md w-full flex flex-col items-center justify-center gap-4">
+                  <audio
+                    src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                    controls
+                    className="w-full"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">Cardiac Auscultation Reference Recording</span>
+              </div>
+            )}
+
+            {globalRefTab === 4 && (
+              <div className="w-full h-full flex flex-col items-center justify-center min-h-[300px] gap-4">
+                <div className="rounded-xl border p-2 bg-black overflow-hidden max-w-xl w-full flex items-center justify-center">
+                  <video
+                    src="https://www.w3schools.com/html/mov_bbb.mp4"
+                    controls
+                    className="w-full max-h-[250px]"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">Patient Gait Mobility Assessment Video</span>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="px-6 py-4 border-t border-border bg-muted/10 flex justify-end shrink-0">
+            <button
+              onClick={() => setIsGlobalRefOpen(false)}
+              className="bg-[var(--exam-accent)] hover:opacity-90 text-white font-bold py-2 px-5 rounded-xl transition-all cursor-pointer text-xs"
+            >
+              Close References
+            </button>
           </div>
         </div>
       )}
 
       {/* FLOATING CALCULATOR */}
       {showCalculator && (
-        <div className="fixed top-20 right-6 z-50 w-64 bg-card border border-border rounded-2xl shadow-2xl p-4 flex flex-col gap-3 animate-card-enter">
+        <div className={`fixed top-20 right-6 z-50 bg-card border border-border rounded-2xl shadow-2xl p-4 flex flex-col gap-3 animate-card-enter ${adminCalculator === 'On - Scientific' ? 'w-[360px]' : 'w-64'}`}>
           <div className="flex justify-between items-center border-b pb-2 border-border">
             <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
               <i className="fa-light fa-calculator" />
-              Calculator
+              Calculator {adminCalculator === 'On - Scientific' ? '(Scientific)' : '(Basic)'}
             </span>
             <button
               onClick={() => setShowCalculator(false)}
@@ -3418,35 +3562,50 @@ export default function ExamTakePage() {
             <div className="text-lg font-bold text-foreground truncate font-mono">{calcResult || '0'}</div>
           </div>
 
-          {/* Buttons */}
-          <div className="grid grid-cols-4 gap-2 text-sm font-semibold font-mono">
-            {/* Row 1 */}
-            <button onClick={() => handleCalcBtnClick('C')} className="p-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg cursor-pointer">C</button>
-            <button onClick={() => handleCalcBtnClick('del')} className="p-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg cursor-pointer">del</button>
-            <button onClick={() => handleCalcBtnClick('/')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">/</button>
-            <button onClick={() => handleCalcBtnClick('*')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">*</button>
+          {/* Buttons Container */}
+          <div className="flex gap-2">
+            {/* Scientific functions on the left */}
+            {adminCalculator === 'On - Scientific' && (
+              <div className="grid grid-cols-2 gap-1.5 text-xs font-semibold font-mono w-[110px] shrink-0 border-r pr-2 border-border">
+                <button onClick={() => handleCalcBtnClick('sin')} className="p-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg cursor-pointer flex items-center justify-center font-bold">sin</button>
+                <button onClick={() => handleCalcBtnClick('cos')} className="p-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg cursor-pointer flex items-center justify-center font-bold">cos</button>
+                <button onClick={() => handleCalcBtnClick('tan')} className="p-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg cursor-pointer flex items-center justify-center font-bold">tan</button>
+                <button onClick={() => handleCalcBtnClick('sqrt')} className="p-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg cursor-pointer flex items-center justify-center font-bold">√</button>
+                <button onClick={() => handleCalcBtnClick('log')} className="p-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg cursor-pointer flex items-center justify-center font-bold">log</button>
+                <button onClick={() => handleCalcBtnClick('ln')} className="p-1.5 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/50 rounded-lg cursor-pointer flex items-center justify-center font-bold">ln</button>
+              </div>
+            )}
 
-            {/* Row 2 */}
-            <button onClick={() => handleCalcBtnClick('7')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">7</button>
-            <button onClick={() => handleCalcBtnClick('8')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">8</button>
-            <button onClick={() => handleCalcBtnClick('9')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">9</button>
-            <button onClick={() => handleCalcBtnClick('-')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">-</button>
+            {/* Standard Keypad */}
+            <div className="grid grid-cols-4 gap-2 text-sm font-semibold font-mono flex-1">
+              {/* Row 1 */}
+              <button onClick={() => handleCalcBtnClick('C')} className="p-2 bg-destructive/10 hover:bg-destructive/20 text-destructive rounded-lg cursor-pointer">C</button>
+              <button onClick={() => handleCalcBtnClick('del')} className="p-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg cursor-pointer">del</button>
+              <button onClick={() => handleCalcBtnClick('/')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">/</button>
+              <button onClick={() => handleCalcBtnClick('*')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">*</button>
 
-            {/* Row 3 */}
-            <button onClick={() => handleCalcBtnClick('4')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">4</button>
-            <button onClick={() => handleCalcBtnClick('5')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">5</button>
-            <button onClick={() => handleCalcBtnClick('6')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">6</button>
-            <button onClick={() => handleCalcBtnClick('+')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">+</button>
+              {/* Row 2 */}
+              <button onClick={() => handleCalcBtnClick('7')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">7</button>
+              <button onClick={() => handleCalcBtnClick('8')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">8</button>
+              <button onClick={() => handleCalcBtnClick('9')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">9</button>
+              <button onClick={() => handleCalcBtnClick('-')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">-</button>
 
-            {/* Row 4 */}
-            <button onClick={() => handleCalcBtnClick('1')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">1</button>
-            <button onClick={() => handleCalcBtnClick('2')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">2</button>
-            <button onClick={() => handleCalcBtnClick('3')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">3</button>
-            <button onClick={() => handleCalcBtnClick('=')} className="row-span-2 p-2 bg-[var(--exam-accent)] text-white hover:opacity-90 rounded-lg cursor-pointer flex items-center justify-center font-bold">=</button>
+              {/* Row 3 */}
+              <button onClick={() => handleCalcBtnClick('4')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">4</button>
+              <button onClick={() => handleCalcBtnClick('5')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">5</button>
+              <button onClick={() => handleCalcBtnClick('6')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">6</button>
+              <button onClick={() => handleCalcBtnClick('+')} className="p-2 bg-muted hover:bg-muted/80 text-[var(--exam-accent)] rounded-lg cursor-pointer">+</button>
 
-            {/* Row 5 */}
-            <button onClick={() => handleCalcBtnClick('0')} className="col-span-2 p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">0</button>
-            <button onClick={() => handleCalcBtnClick('.')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">.</button>
+              {/* Row 4 */}
+              <button onClick={() => handleCalcBtnClick('1')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">1</button>
+              <button onClick={() => handleCalcBtnClick('2')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">2</button>
+              <button onClick={() => handleCalcBtnClick('3')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">3</button>
+              <button onClick={() => handleCalcBtnClick('=')} className="row-span-2 p-2 bg-[var(--exam-accent)] text-white hover:opacity-90 rounded-lg cursor-pointer flex items-center justify-center font-bold">=</button>
+
+              {/* Row 5 */}
+              <button onClick={() => handleCalcBtnClick('0')} className="col-span-2 p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">0</button>
+              <button onClick={() => handleCalcBtnClick('.')} className="p-2 bg-background border border-border hover:bg-muted text-foreground rounded-lg cursor-pointer">.</button>
+            </div>
           </div>
         </div>
       )}
