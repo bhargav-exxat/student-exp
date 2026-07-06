@@ -668,10 +668,14 @@ function InteractiveIcon({ sz, reduced }: { sz: SZ; reduced: boolean }) {
 
   // Track click-effect timers so unmounting (Ask Leo sidebar close) doesn't
   // leave timers running that then call setState on an unmounted component.
-  const clickTimersRef = React.useRef<Set<any>>(new Set())
+  const clickTimersRef = React.useRef<Set<ReturnType<typeof setTimeout>>>(null!)
+  if (clickTimersRef.current === null!) {
+    clickTimersRef.current = new Set()
+  }
   React.useEffect(() => {
     const set = clickTimersRef.current
     return () => {
+      if (!set) return
       for (const t of set) clearTimeout(t)
       set.clear()
     }
