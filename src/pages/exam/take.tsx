@@ -116,6 +116,7 @@ export default function ExamTakePage() {
     23: 'Dehydration impacts renal function...', // Subjective
     24: 'Asthma exacerbation pathophysiology...', // Subjective
     25: 'Mitral Valve',
+    29: { leftMin: 50, leftMax: 70, topMin: 55, topMax: 78 }, // Left Ventricle region bounding box
     26: { 'CN I (Olfactory)': 'Smell', 'CN II (Optic)': 'Vision', 'CN VII (Facial)': 'Facial expression' },
     27: { Penicillins: 'Cell wall synthesis inhibitor', Macrolides: 'Protein synthesis inhibitor', Fluoroquinolones: 'DNA gyrase inhibitor' }
   };
@@ -148,6 +149,7 @@ export default function ExamTakePage() {
     23: "Dehydration reduces intravascular volume, decreasing renal perfusion. In response, kidneys activate the renin-angiotensin-aldosterone system (RAAS) to conserve water/sodium, and release Antidiuretic Hormone (ADH) to increase water reabsorption in the collecting ducts.",
     24: "Asthma exacerbation is characterized by chronic airway inflammation leading to hyperresponsiveness. Exposure to triggers causes bronchoconstriction, airway edema, and mucus plugging, creating airway resistance and airflow limitation.",
     25: "The mitral (bicuspid) valve is located between the left atrium and left ventricle, allowing blood to flow into the left ventricle.",
+    29: "The left ventricle is located on the lower right side of the heart diagram (anatomical left), forming the apex of the heart and pumping blood into the aorta.",
     26: "CN I (Olfactory) controls smell. CN II (Optic) controls vision. CN VII (Facial) controls facial expression.",
     27: "Penicillins inhibit cell wall synthesis. Macrolides bind to the 50S ribosomal subunit to inhibit protein synthesis. Fluoroquinolones target DNA gyrase to prevent bacterial replication."
   };
@@ -158,6 +160,19 @@ export default function ExamTakePage() {
     const correctAns = correctAnswers[q.id];
     
     if (studentAns === undefined || studentAns === null) return false;
+    
+    if (q.type === 'hotspot' && q.freePin) {
+      if (typeof studentAns !== 'string') return false;
+      const match = studentAns.match(/left:([\d.]+)%;top:([\d.]+)%/);
+      if (!match) return false;
+      const x = parseFloat(match[1]);
+      const y = parseFloat(match[2]);
+      const box = correctAns;
+      if (box && typeof box === 'object' && 'leftMin' in box) {
+        return x >= box.leftMin && x <= box.leftMax && y >= box.topMin && y <= box.topMax;
+      }
+      return false;
+    }
     
     if (q.type === 'mcq-single' || q.type === 'dropdown' || q.type === 'hotspot') {
       return studentAns === correctAns;
@@ -204,7 +219,14 @@ export default function ExamTakePage() {
             newAnswers[q.id] = "Asthma exacerbation is characterized by bronchospasm, mucous hypersecretion, and mucosal edema. Trigger exposure causes IgE crosslinking on mast cells, degranulation, and mediator release (leukotrienes, histamine). This narrows airway lumens, causing severe airflow limitation, wheezing, and dyspnea.";
           }
         } else if (q.type === 'hotspot') {
-          newAnswers[q.id] = correctAnswers[q.id];
+          if (q.freePin) {
+            const box = correctAnswers[q.id];
+            const midLeft = ((box.leftMin + box.leftMax) / 2).toFixed(1);
+            const midTop = ((box.topMin + box.topMax) / 2).toFixed(1);
+            newAnswers[q.id] = `left:${midLeft}%;top:${midTop}%`;
+          } else {
+            newAnswers[q.id] = correctAnswers[q.id];
+          }
         } else if (q.type === 'match') {
           newAnswers[q.id] = correctAnswers[q.id];
         }
@@ -1656,6 +1678,9 @@ export default function ExamTakePage() {
       {phase === 'submitted' && (() => {
         // Calculate scores
         const objCorrect = questions.filter(q => q.type !== 'essay' && isQuestionCorrect(q)).reduce((sum, q) => sum + (q.points ?? 2), 0);
+        const correctObjectiveCount = questions.filter(q => q.type !== 'essay' && isQuestionCorrect(q)).length;
+        const totalObjectiveCount = questions.filter(q => q.type !== 'essay').length;
+        const unansweredCount = questions.filter(q => !isQuestionAnswered(q)).length;
         const objectiveMaxPoints = questions.filter(q => q.type !== 'essay').reduce((sum, q) => sum + (q.points ?? 2), 0);
         const subjectiveMaxPoints = questions.filter(q => q.type === 'essay').reduce((sum, q) => sum + (q.points ?? 2), 0);
         const subjectiveScore = adminGradingStatus === 'complete' ? (0.9 * subjectiveMaxPoints) : 0;
@@ -2054,9 +2079,9 @@ export default function ExamTakePage() {
                         <span className="font-bold text-muted-foreground uppercase tracking-wider mr-2">Filter questions:</span>
                         {[
                           { id: 'all', label: `All (${questions.length})` },
-                          { id: 'correct', label: `Correct (${objCorrect})` },
-                          { id: 'incorrect', label: `Incorrect (${25 - objCorrect})` },
-                          { id: 'unanswered', label: 'Unanswered (0)' }
+                          { id: 'correct', label: `Correct (${correctObjectiveCount})` },
+                          { id: 'incorrect', label: `Incorrect (${totalObjectiveCount - correctObjectiveCount})` },
+                          { id: 'unanswered', label: `Unanswered (${unansweredCount})` }
                         ].map((btn) => (
                           <button
                             key={btn.id}
@@ -2285,14 +2310,18 @@ export default function ExamTakePage() {
                                         {showComparison && (
                                           <div className="flex justify-between border-b pb-1.5 border-border/40">
                                             <span className="text-muted-foreground">Your response:</span>
-                                            <span className={stuAns === corrAns ? 'text-emerald-500 font-bold' : 'text-destructive font-bold'}>
-                                              {stuAns || '(Unanswered)'}
+                                            <span className={isQuestionCorrect(q) ? 'text-emerald-500 font-bold' : 'text-destructive font-bold'}>
+                                              {q.freePin 
+                                                ? (stuAns ? `Pinned (${stuAns.replace("left:", "").replace("top:", "")})` : '(Unanswered)')
+                                                : (stuAns || '(Unanswered)')}
                                             </span>
                                           </div>
                                         )}
                                         <div className="flex justify-between">
                                           <span className="text-muted-foreground">Correct response:</span>
-                                          <span className="text-emerald-500 font-bold">{corrAns}</span>
+                                          <span className="text-emerald-500 font-bold">
+                                            {q.freePin ? (q.correctLabel || "Left Ventricle") : corrAns}
+                                          </span>
                                         </div>
                                       </div>
                                     )}

@@ -592,47 +592,108 @@ export function QuestionRenderer({
       case "hotspot": {
         const hotspots = question.hotspots || [];
         const optionKeys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        
+        let pinLeft = "";
+        let pinTop = "";
+        if (question.freePin && currentAnswer && typeof currentAnswer === "string") {
+          const match = currentAnswer.match(/left:([\d.]+)%;top:([\d.]+)%/);
+          if (match) {
+            pinLeft = `${match[1]}%`;
+            pinTop = `${match[2]}%`;
+          }
+        }
+
         return (
           <div className="flex flex-col items-center">
-            <div className="relative inline-block border rounded-xl overflow-hidden shadow-sm bg-muted border-border">
+            <div 
+              className={`relative inline-block border rounded-xl overflow-hidden shadow-sm bg-muted border-border select-none ${
+                question.freePin ? "cursor-crosshair" : ""
+              }`}
+              onClick={
+                question.freePin
+                  ? (e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const y = e.clientY - rect.top;
+                      const pctX = ((x / rect.width) * 100).toFixed(1);
+                      const pctY = ((y / rect.height) * 100).toFixed(1);
+                      onAnswerChange(question.id, `left:${pctX}%;top:${pctY}%`);
+                    }
+                  : undefined
+              }
+            >
               <img
                 src={question.image}
                 alt={question.text}
-                className="max-w-full h-auto block"
+                className={`max-w-full h-auto block ${question.freePin ? "pointer-events-none" : ""}`}
                 style={{ maxHeight: "450px" }}
               />
-              {hotspots.map((spot, idx) => {
-                const isSelected = currentAnswer === spot.label;
-                const spotLetter = optionKeys[idx] || '';
-                return (
-                  <button
-                    key={spot.label}
-                    onClick={() => onAnswerChange(question.id, isSelected ? "" : spot.label)}
-                    className={`absolute rounded-full border-2 transition-all flex items-center justify-center p-0 cursor-pointer ${
-                      isSelected
-                        ? "bg-[var(--exam-accent)] border-transparent text-white"
-                        : "bg-white hover:bg-muted border-[var(--exam-accent)] text-muted-foreground shadow-sm"
-                    }`}
-                    style={{
-                      left: spot.left,
-                      top: spot.top,
-                      width: "1.8em",
-                      height: "1.8em",
-                      marginLeft: "-0.9em",
-                      marginTop: "-0.9em",
-                      zIndex: 10,
-                    }}
-                    title={`Select ${spot.label}`}
-                    aria-label={`Select ${spot.label}`}
-                  >
-                    {isSelected ? (
-                      <i className="fa-solid fa-check" style={{ fontSize: "10px" }} />
-                    ) : (
-                      <span className="text-[9px] font-extrabold text-[var(--exam-accent)]">{spotLetter}</span>
-                    )}
-                  </button>
-                );
-              })}
+
+              {!question.freePin &&
+                hotspots.map((spot, idx) => {
+                  const isSelected = currentAnswer === spot.label;
+                  const spotLetter = optionKeys[idx] || "";
+                  return (
+                    <button
+                      key={spot.label}
+                      onClick={() => onAnswerChange(question.id, isSelected ? "" : spot.label)}
+                      className={`absolute rounded-full border-2 transition-all flex items-center justify-center p-0 cursor-pointer ${
+                        isSelected
+                          ? "bg-[var(--exam-accent)] border-transparent text-white"
+                          : "bg-white hover:bg-muted border-[var(--exam-accent)] text-muted-foreground shadow-sm"
+                      }`}
+                      style={{
+                        left: spot.left,
+                        top: spot.top,
+                        width: "1.8em",
+                        height: "1.8em",
+                        marginLeft: "-0.9em",
+                        marginTop: "-0.9em",
+                        zIndex: 10,
+                      }}
+                      title={`Select ${spot.label}`}
+                      aria-label={`Select ${spot.label}`}
+                    >
+                      {isSelected ? (
+                        <i className="fa-solid fa-check" style={{ fontSize: "10px" }} />
+                      ) : (
+                        <span className="text-[9px] font-extrabold text-[var(--exam-accent)]">{spotLetter}</span>
+                      )}
+                    </button>
+                  );
+                })}
+
+              {question.freePin && currentAnswer && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent re-adding pin on container click
+                    onAnswerChange(question.id, ""); // clear answer/unanswer
+                  }}
+                  className="absolute rounded-full transition-all flex items-center justify-center p-0 group cursor-pointer"
+                  style={{
+                    left: pinLeft,
+                    top: pinTop,
+                    width: "2.2em",
+                    height: "2.2em",
+                    marginLeft: "-1.1em",
+                    marginTop: "-1.1em",
+                    zIndex: 20,
+                  }}
+                  title="Click to remove pin"
+                  aria-label="Remove pin"
+                >
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    {/* Pulsing visual effect */}
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping group-hover:bg-destructive/30" />
+                    
+                    {/* Marker container */}
+                    <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-red-600 border-2 border-white text-white shadow-lg transition-colors duration-200 group-hover:bg-destructive group-hover:border-destructive">
+                      <i className="fa-solid fa-location-dot text-[14px] group-hover:hidden" />
+                      <i className="fa-solid fa-trash-can text-[12px] hidden group-hover:block" />
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
         );

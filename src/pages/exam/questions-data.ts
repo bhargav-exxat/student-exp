@@ -42,6 +42,8 @@ export interface Question {
   matches?: QuestionMatch[];
   hotspots?: Hotspot[];
   image?: string; // hotspot base image
+  freePin?: boolean;
+  correctLabel?: string;
   attachments?: QuestionAttachment[] | null;
 }
 
@@ -550,6 +552,19 @@ export const questionsData: Question[] = [
       { label: "Tricuspid Valve", left: "40%", top: "60%" },
       { label: "Mitral Valve", left: "65%", top: "55%" }
     ],
+    attachments: null
+  },
+  {
+    id: 29,
+    originalId: 10,
+    sectionId: 5,
+    sectionName: "Cardiovascular Anatomy",
+    sectionTitle: "Section 5 of 6",
+    type: "hotspot",
+    freePin: true,
+    correctLabel: "Left Ventricle",
+    text: "Identify the Left Ventricle on the heart model by clicking to place a pin directly on it.",
+    image: "/heart_anatomy_placeholder.svg",
     attachments: null
   },
 
