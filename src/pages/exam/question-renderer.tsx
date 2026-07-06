@@ -57,6 +57,17 @@ export function QuestionRenderer({
     };
   }, [activeHighlight]);
 
+  // Free-pin placement state to suppress hover delete pointer/icon immediately after click
+  const [mouseHasLeft, setMouseHasLeft] = React.useState(true);
+
+  React.useEffect(() => {
+    if (currentAnswer) {
+      setMouseHasLeft(false);
+    } else {
+      setMouseHasLeft(true);
+    }
+  }, [currentAnswer]);
+
   // Active tab state for tabbed reference panels
   const [activeTab, setActiveTab] = React.useState<number>(0);
 
@@ -669,6 +680,7 @@ export function QuestionRenderer({
                     e.stopPropagation(); // prevent re-adding pin on container click
                     onAnswerChange(question.id, ""); // clear answer/unanswer
                   }}
+                  onMouseLeave={() => setMouseHasLeft(true)}
                   className="absolute p-0 border-0 bg-transparent flex items-center justify-center group"
                   style={{
                     left: pinLeft,
@@ -678,16 +690,20 @@ export function QuestionRenderer({
                     marginLeft: "-12px",
                     marginTop: "-16px",
                     zIndex: 20,
-                    cursor: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%23ef4444'><path d='M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z'/></svg>") 10 10, pointer`,
+                    cursor: mouseHasLeft
+                      ? `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%23ef4444'><path d='M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z'/></svg>") 10 10, pointer`
+                      : "default",
                   }}
                   title="Click to delete pin"
                   aria-label="Delete pin"
                 >
                   <div className="relative w-full h-full flex flex-col items-center justify-center">
-                    {/* Pin SVG shown by default, hidden on hover */}
+                    {/* Pin SVG shown by default, hidden on hover if mouseHasLeft is true */}
                     <svg
                       viewBox="0 0 24 24"
-                      className="w-6 h-8 text-red-600 drop-shadow-lg transition-all duration-200 group-hover:hidden"
+                      className={`w-6 h-8 text-red-600 drop-shadow-lg transition-all duration-200 ${
+                        mouseHasLeft ? "group-hover:hidden" : ""
+                      }`}
                       fill="currentColor"
                       stroke="white"
                       strokeWidth="1.5"
@@ -696,10 +712,12 @@ export function QuestionRenderer({
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                     </svg>
 
-                    {/* Trash/Delete SVG shown only on hover */}
+                    {/* Trash/Delete SVG shown only on hover if mouseHasLeft is true */}
                     <svg
                       viewBox="0 0 24 24"
-                      className="w-6 h-6 text-destructive drop-shadow-md hidden group-hover:block my-auto"
+                      className={`w-6 h-6 text-destructive drop-shadow-md my-auto ${
+                        mouseHasLeft ? "hidden group-hover:block" : "hidden"
+                      }`}
                       fill="currentColor"
                     >
                       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
