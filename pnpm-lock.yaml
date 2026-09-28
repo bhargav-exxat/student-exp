@@ -4,6 +4,14 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@exxatdesignux/product-framework': ^0.1.7
+
+patchedDependencies:
+  '@exxatdesignux/ui':
+    hash: e4d4d09f326dd5076f60a223f1b2e783ea03a337c4b3ef7bc700c42bd1160ea3
+    path: patches/@exxatdesignux__ui.patch
+
 importers:
 
   .:
@@ -25,7 +33,7 @@ importers:
         version: 0.1.7(@types/react@19.2.16)(immer@11.1.8)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
       '@exxatdesignux/ui':
         specifier: ^0.6.47
-        version: 0.6.47(@emotion/is-prop-valid@1.4.0)(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react-router-dom@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(redux@5.0.1)(styled-components@6.4.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(use-sync-external-store@1.6.0(react@19.2.7))
+        version: 0.6.47(patch_hash=e4d4d09f326dd5076f60a223f1b2e783ea03a337c4b3ef7bc700c42bd1160ea3)(@emotion/is-prop-valid@1.4.0)(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react-router-dom@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(redux@5.0.1)(styled-components@6.4.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(use-sync-external-store@1.6.0(react@19.2.7))
       '@fontsource-variable/inter':
         specifier: ^5.2.5
         version: 5.2.8
@@ -4560,7 +4568,7 @@ snapshots:
       - immer
       - use-sync-external-store
 
-  '@exxatdesignux/ui@0.6.47(@emotion/is-prop-valid@1.4.0)(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react-router-dom@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(redux@5.0.1)(styled-components@6.4.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(use-sync-external-store@1.6.0(react@19.2.7))':
+  '@exxatdesignux/ui@0.6.47(patch_hash=e4d4d09f326dd5076f60a223f1b2e783ea03a337c4b3ef7bc700c42bd1160ea3)(@emotion/is-prop-valid@1.4.0)(@types/react-dom@19.2.3(@types/react@19.2.16))(@types/react@19.2.16)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react-router-dom@7.16.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(redux@5.0.1)(styled-components@6.4.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(use-sync-external-store@1.6.0(react@19.2.7))':
     dependencies:
       '@exxatdesignux/product-framework': 0.1.7(@types/react@19.2.16)(immer@11.1.8)(react@19.2.7)(use-sync-external-store@1.6.0(react@19.2.7))
       '@hookform/resolvers': 5.4.0(react-hook-form@7.77.0(react@19.2.7))

@@ -751,7 +751,7 @@ export function NewLibraryItemForm({
   const navigate = useNavigate()
   const [submitting, setSubmitting] = React.useState(false)
   const [isLeoDrafting, setIsLeoDrafting] = React.useState(false)
-  const leoDraftTimeoutRef = React.useRef<any>(null)
+  const leoDraftTimeoutRef = React.useRef<number | null>(null)
   const [tagDraft, setTagDraft] = React.useState("")
   const [inspectorOpen, setInspectorOpen] = React.useState(true)
   const [moreOpen, setMoreOpen] = React.useState(false)

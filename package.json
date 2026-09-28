@@ -91,6 +91,9 @@
     "allowedDeprecatedVersions": {
       "node-domexception": "1.0.0",
       "whatwg-encoding": "3.1.1"
+    },
+    "patchedDependencies": {
+      "@exxatdesignux/ui": "patches/@exxatdesignux__ui.patch"
     }
   }
 }

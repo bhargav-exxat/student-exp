@@ -1,0 +1,46 @@
+diff --git a/template-vite/components/new-library-item-form.tsx b/template-vite/components/new-library-item-form.tsx
+index f81a6b8a9229e59972a20aa0b8170186d041debe..553d540d53be94a1150d38ca2a5ae7e035479e8f 100644
+--- a/template-vite/components/new-library-item-form.tsx
++++ b/template-vite/components/new-library-item-form.tsx
+@@ -751,9 +751,7 @@ export function NewLibraryItemForm({
+   const navigate = useNavigate()
+   const [submitting, setSubmitting] = React.useState(false)
+   const [isLeoDrafting, setIsLeoDrafting] = React.useState(false)
+-  const leoDraftTimeoutRef = React.useRef<ReturnType<typeof window.setTimeout> | null>(
+-    null,
+-  )
++  const leoDraftTimeoutRef = React.useRef<number | null>(null)
+   const [tagDraft, setTagDraft] = React.useState("")
+   const [inspectorOpen, setInspectorOpen] = React.useState(true)
+   const [moreOpen, setMoreOpen] = React.useState(false)
+diff --git a/template-vite/components/ui/leo-icon.tsx b/template-vite/components/ui/leo-icon.tsx
+index 32042e2dcf0da9684ae32a7d9ee9c108cd259a15..dcb8cc9b4f01ae7957e284f275bc316cd01217a5 100644
+--- a/template-vite/components/ui/leo-icon.tsx
++++ b/template-vite/components/ui/leo-icon.tsx
+@@ -684,20 +684,22 @@ function InteractiveIcon({ sz, reduced }: { sz: SZ; reduced: boolean }) {
+   const ringIdRef = React.useRef(0)
+   const onClick = React.useCallback(() => {
+     if (reduced) return
++    const timers = clickTimersRef.current
++    if (!timers) return
+     setCast(true)
+     const tCast = setTimeout(() => {
+-      clickTimersRef.current.delete(tCast)
++      timers.delete(tCast)
+       setCast(false)
+     }, 720)
+-    clickTimersRef.current.add(tCast)
++    timers.add(tCast)
+ 
+     const id = ++ringIdRef.current
+     setRings(prev => [...prev, id])
+     const tRing = setTimeout(() => {
+-      clickTimersRef.current.delete(tRing)
++      timers.delete(tRing)
+       setRings(prev => prev.filter(r => r !== id))
+     }, 800)
+-    clickTimersRef.current.add(tRing)
++    timers.add(tRing)
+ 
+     spawnBurst(6)
+   }, [reduced, spawnBurst])
