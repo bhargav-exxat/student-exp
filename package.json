@@ -8,7 +8,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "postinstall": "exxat-ui sync-extras --quiet --no-upgrade-notice || true && exxat-ui upgrade --quiet || true",
+    "postinstall": "exxat-ui sync-extras --quiet --no-upgrade-notice --no-postinstall || true",
     "predev": "exxat-ui dev-guard",
     "dev": "vite",
     "dev:5001": "vite --port 5001",
